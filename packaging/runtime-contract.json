@@ -1,0 +1,10 @@
+{
+  "schema_version": 2,
+  "package": "BwrApi.Client",
+  "runtime_path": "bwrapi/runtime/win-x64/bwrapi_runtime.dll",
+  "process_access_policy": "read-query-only",
+  "redistribution_notices": [
+    "bwrapi/runtime/win-x64/LICENSE.runtime.txt",
+    "bwrapi/runtime/win-x64/THIRD_PARTY_NOTICES.md"
+  ]
+}

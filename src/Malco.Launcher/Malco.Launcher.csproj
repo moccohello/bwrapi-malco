@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>Malco.Launcher</RootNamespace>
+    <AssemblyName>Malco.Launcher</AssemblyName>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <SelfContained>false</SelfContained>
+    <RuntimeFrameworkVersion>10.0.10</RuntimeFrameworkVersion>
+    <RollForward>LatestPatch</RollForward>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- English uses the invariant resources; only Korean needs satellite assemblies. -->
+    <SatelliteResourceLanguages>ko</SatelliteResourceLanguages>
+    <Deterministic>true</Deterministic>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <ApplicationIcon>..\..\branding\malco.ico</ApplicationIcon>
+  </PropertyGroup>
+</Project>

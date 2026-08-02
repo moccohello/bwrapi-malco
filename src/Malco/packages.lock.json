@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "BwrApi.Client": {
+        "type": "Direct",
+        "requested": "[4.0.0-embedded-preview.81, )",
+        "resolved": "4.0.0-embedded-preview.81",
+        "contentHash": "zgcyD6WLcFTVQTDrK/z0BZ0O2elKclgu5N/dXPNte1eFYnOEsq4232rCAcvBVpD/HAMLCIkfqUXbbIV2H2Be5Q=="
+      },
+      "malco.telemetry": {
+        "type": "Project"
+      }
+    },
+    "net10.0-windows7.0/win-x64": {}
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "malco.dotnet-desktop-prerequisite.v1",
+  "framework": "Microsoft.WindowsDesktop.App",
+  "architecture": "x64",
+  "minimum_version": "10.0.10",
+  "file_name": "windowsdesktop-runtime-10.0.10-win-x64.exe",
+  "download_url": "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.10/windowsdesktop-runtime-10.0.10-win-x64.exe",
+  "sha256": "e82fc901c8f52d716293b2bc0830ce0dd254a06268c457a19e8fc503560a84d1",
+  "sha512": "a5502261c25ba163f35bca7d50611c195e78b8797b16c5bbf2203fbdfff92c0275d36838a3200c08443d2d23a2f6a867c58093d5c239a60dd798a6596df4dc13"
+}

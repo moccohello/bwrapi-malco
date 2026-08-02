@@ -1,0 +1,43 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco", "src\Malco\Malco.csproj", "{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco.Launcher", "src\Malco.Launcher\Malco.Launcher.csproj", "{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco.Telemetry", "src\Malco.Telemetry\Malco.Telemetry.csproj", "{C72E46A2-6046-471F-91FB-1F739A72E3D6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2}.Debug|Any CPU.Build.0 = Debug|x64
+		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2}.Release|Any CPU.ActiveCfg = Release|x64
+		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2}.Release|Any CPU.Build.0 = Release|x64
+		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A}.Debug|Any CPU.Build.0 = Debug|x64
+		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A}.Release|Any CPU.ActiveCfg = Release|x64
+		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A}.Release|Any CPU.Build.0 = Release|x64
+		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Debug|Any CPU.Build.0 = Debug|x64
+		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Release|Any CPU.ActiveCfg = Release|x64
+		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{C72E46A2-6046-471F-91FB-1F739A72E3D6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F57C3F03-8C98-4F19-A801-B56B139F39C5}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "service_base_uri": "https://api.horangmalco.com/",
+  "event_batch_path": "/api/v1/events/batch",
+  "installation_id_file_name": "telemetry-installation-id.txt",
+  "queue_file_name": "game-start-telemetry-queue.json",
+  "queue_mutex_name": "Local\\Malco.Telemetry.GameStartQueue.v1",
+  "max_pending_events": 256,
+  "max_queue_bytes": 1048576,
+  "max_event_bytes": 8192,
+  "max_batch_events": 32,
+  "max_in_memory_events": 64,
+  "request_timeout_seconds": 5,
+  "retry_min_seconds": 15,
+  "retry_max_seconds": 3600,
+  "mutex_wait_milliseconds": 250
+}
