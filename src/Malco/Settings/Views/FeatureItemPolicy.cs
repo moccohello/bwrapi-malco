@@ -62,7 +62,8 @@ namespace Malco.Settings.Views
                         .SelectMany(branch => branch.Items)
                         .Where(item =>
                             item.Kind == TechTreeItemKind.Upgrade ||
-                            item.Kind == TechTreeItemKind.Tech);
+                            (item.Kind == TechTreeItemKind.Tech &&
+                             UpgradeAvailabilityPolicy.IsResearchTechTypeId(item.TechIndex)));
                     break;
                 default:
                     return Enumerable.Empty<TechTreeItem>();

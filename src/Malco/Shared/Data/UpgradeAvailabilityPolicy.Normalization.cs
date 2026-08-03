@@ -102,7 +102,9 @@ namespace Malco.Data
         private static List<UpgradeState> FilterUpgradeStatesForRace(Race race, IEnumerable<UpgradeState> states)
         {
             return (states ?? new UpgradeState[0])
-                .Where(state => state != null && IsStateKeyAllowedForRace(GetUpgradeStateKey(state), race))
+                .Where(state => state != null &&
+                    IsStateKeyAllowedForRace(GetUpgradeStateKey(state), race) &&
+                    !IsNonResearchTechStateKey(GetUpgradeStateKey(state)))
                 .ToList();
         }
 

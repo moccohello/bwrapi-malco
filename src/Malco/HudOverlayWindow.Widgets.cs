@@ -153,7 +153,8 @@ namespace Malco
                 .SelectMany(branch => branch.Items)
                 .Where(item =>
                     item.Kind == TechTreeItemKind.Upgrade ||
-                    item.Kind == TechTreeItemKind.Tech)
+                    (item.Kind == TechTreeItemKind.Tech &&
+                     UpgradeAvailabilityPolicy.IsResearchTechTypeId(item.TechIndex)))
                 .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First());
         }

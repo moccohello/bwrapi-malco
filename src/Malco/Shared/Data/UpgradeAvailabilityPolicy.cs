@@ -135,6 +135,11 @@ namespace Malco.Data
             return "unit:" + index.ToString(CultureInfo.InvariantCulture);
         }
 
+        internal static bool IsResearchTechTypeId(int techTypeId)
+        {
+            return !NonResearchTechTypeIds.Contains(techTypeId);
+        }
+
         private sealed class UpgradeOpportunityRule
         {
             public static UpgradeOpportunityRule UnitMorph(int unitId, Race race, params int[][] requiredBuildingGroups)

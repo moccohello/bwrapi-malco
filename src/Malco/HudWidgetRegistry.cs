@@ -62,19 +62,19 @@ namespace Malco
             new HudWidgetDefinition(Workers, "Workers", "Worker count", "Movable and resizable idle and total worker counts.", 1130d, 31.305d, 142d, 32d);
 
         public static readonly HudWidgetDefinition UnitsWidget =
-            new HudWidgetDefinition(Units, "Units", "Units", "Combat-unit icons with current counts.", 8d, 6d, 233.50733476318817d, 323.1130825412207d, false);
+            new HudWidgetDefinition(Units, "Units", "Units", "Combat-unit icons with current counts.", 4d, 4d, 198.50733476318817d, 256.6130825412207d, false);
 
         public static readonly HudWidgetDefinition BuildingsWidget =
-            new HudWidgetDefinition(Buildings, "Buildings", "Buildings", "Owned building icons with current counts.", 246.5552480481839d, 8d, 209.68646706487567d, 106.89085061771214d, false);
+            new HudWidgetDefinition(Buildings, "Buildings", "Buildings", "Owned building icons with current counts.", 230.91536500680205d, 4d, 197.68646706487567d, 257.39085061771215d, false);
 
         public static readonly HudWidgetDefinition UpgradesWidget =
-            new HudWidgetDefinition(Upgrades, "Completed upgrades and research", "Completed upgrades and research", "Completed upgrades, levels, and researched abilities.", 462.704093922802d, 6d, 247d, 111d, false);
+            new HudWidgetDefinition(Upgrades, "Completed upgrades and research", "Completed upgrades and research", "Completed upgrades, levels, and researched abilities.", 446.7816543476067d, 4d, 166.5d, 169d, false);
 
         public static readonly HudWidgetDefinition AvailableUpgradesWidget =
-            new HudWidgetDefinition(AvailableUpgrades, "Research available", "Research available", "Upgrades and abilities you can start now; blocked options are dimmed.", 1111.0378501135503d, 378.5132698083053d, 160.96214988644965d, 87.67757742999326d);
+            new HudWidgetDefinition(AvailableUpgrades, "Research available", "Research available", "Upgrades and abilities you can start now; blocked options are dimmed.", 1111.5378501135505d, 403.93871584178314d, 164.46214988644965d, 87.67757742999326d);
 
         public static readonly HudWidgetDefinition UpgradeCompletionWarningsWidget =
-            new HudWidgetDefinition(UpgradeCompletionWarnings, "Upcoming research completion", "Upcoming research completion", "A configurable countdown or full progress for upgrades and abilities.", 1102.9447388342164d, 86.62266113943417d, 173.0552611657835d, 145.6680545041635d);
+            new HudWidgetDefinition(UpgradeCompletionWarnings, "Upcoming research completion", "Upcoming research completion", "A configurable countdown or full progress for upgrades and abilities.", 1104.4447388342163d, 86.62266113943417d, 171.5552611657835d, 210.6680545041635d);
 
         public static IEnumerable<HudWidgetDefinition> EditorFeatures()
         {
@@ -85,7 +85,7 @@ namespace Malco
             yield return AvailableUpgradesWidget;
             yield return UpgradeCompletionWarningsWidget;
             yield return new HudWidgetDefinition(BuildingRallyLines, "Building rally lines", "Building rally lines", "Rally paths for selected production buildings.", 0d, 0d, 1d, 1d);
-            yield return new HudWidgetDefinition(UnitCommandLines, "Unit command lines", "Unit command lines", "Current and queued command paths for selected units, plus active targets for selected defensive buildings.", 0d, 0d, 1d, 1d);
+            yield return new HudWidgetDefinition(UnitCommandLines, "Unit command lines", "Unit command lines", "Current and queued command paths for selected units, plus active targets for selected defensive buildings.", 0d, 0d, 1d, 1d, false);
             yield return new HudWidgetDefinition(MineralWorkers, "Minerals", "Minerals", "Mineral worker counts by base.", 0d, 0d, 1d, 1d);
             yield return new HudWidgetDefinition(GasWorkers, "Gas", "Gas", "Gas worker counts by refinery.", 0d, 0d, 1d, 1d);
         }
