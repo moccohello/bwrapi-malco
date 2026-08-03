@@ -44,7 +44,6 @@ namespace Malco
             {
                 RefreshHudGameplayClip();
             }
-            ShowInTaskbar = enabled;
             _editorPanel.Visibility = enabled && _activeEditorPage == SettingsPage.Layout
                 ? Visibility.Visible
                 : Visibility.Collapsed;
@@ -219,14 +218,30 @@ namespace Malco
         void IOverlaySceneViewPort.RefreshVisibility() => RefreshVisibility();
 
         Dispatcher IOverlayShellViewPort.Dispatcher { get { return Dispatcher; } }
-        bool IOverlayShellViewPort.IsOverlayVisible { get { return IsVisible; } }
+        bool IOverlayShellViewPort.IsOverlayPresented { get { return _overlayPresentationVisible; } }
         bool IOverlayShellViewPort.IsOverlayTopmost { get { return Topmost; } set { Topmost = value; } }
         double IOverlayShellViewPort.OverlayLeft { get { return Left; } }
         double IOverlayShellViewPort.OverlayTop { get { return Top; } }
         double IOverlayShellViewPort.OverlayWidth { get { return Width; } }
         double IOverlayShellViewPort.OverlayHeight { get { return Height; } }
-        void IOverlayShellViewPort.ShowOverlay() { Show(); }
-        void IOverlayShellViewPort.HideOverlay() { Hide(); }
+        private void SetOverlayPresentation(bool presented)
+        {
+            if (_overlayPresentationVisible == presented) return;
+            _overlayPresentationVisible = presented;
+            if (_initialVisibilityComplete) Opacity = presented ? 1d : 0d;
+        }
+
+        private void CompleteInitialOverlayVisibility()
+        {
+            if (_initialVisibilityComplete) return;
+            _initialVisibilityComplete = true;
+            Opacity = _overlayPresentationVisible ? 1d : 0d;
+        }
+
+        void IOverlayShellViewPort.SetOverlayPresented(bool presented) =>
+            SetOverlayPresentation(presented);
+        void IOverlayShellViewPort.CompleteInitialVisibility() =>
+            CompleteInitialOverlayVisibility();
         void IOverlayShellViewPort.ApplyShellBounds(Rect bounds, bool clampWidgets)
         {
             Left = bounds.Left;

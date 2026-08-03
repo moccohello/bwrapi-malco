@@ -19,3 +19,4 @@ It uses bwrapi to read the game state and displays the overlay with the .NET 10 
 - July 15, 2026 — Beta testing began
 - August 3, 2026 — Version 1.0.0 released
 - August 4, 2026 — Version 1.0.1 released
+- August 4, 2026 — Version 1.0.2 released

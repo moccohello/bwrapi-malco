@@ -73,7 +73,7 @@ namespace Malco
             if (_telemetry != null) _coordinator.UnregisterStateCommitSink(_telemetry);
             _presentationScheduler.Stop();
             _presentationClock.Stop();
-            if (IsVisible) Hide();
+            SetOverlayPresentation(false);
         }
 
         private void OnSourceInitialized(object sender, EventArgs args)
@@ -157,10 +157,7 @@ namespace Malco
             }
 
             args.Cancel = true;
-            if (_editorMode)
-            {
-                HandleSettingsIntent(new SettingsIntent(SettingsIntentKind.CloseEditor));
-            }
+            Dispatcher.BeginInvoke(new Action(ShutdownOverlay));
         }
 
         private void OnClosed(object sender, EventArgs args)

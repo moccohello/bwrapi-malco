@@ -50,8 +50,30 @@ namespace Malco.Launcher
             ReleaseReference reference,
             bool requiredUpdateRecheck = false)
         {
-            var process = Start(reference, null, requiredUpdateRecheck);
-            process.Dispose();
+            var activationId = _stateStore.NewActivationId();
+            try
+            {
+                if (!LaunchAndAwaitHandshake(
+                        reference,
+                        activationId,
+                        requiredUpdateRecheck: requiredUpdateRecheck))
+                {
+                    throw new InvalidDataException(
+                        "Malco did not complete its startup handshake.");
+                }
+                UpdateInstalledProductVersion(reference);
+            }
+            finally
+            {
+                _stateStore.DeleteMarker(activationId);
+            }
+        }
+
+        public void UpdateInstalledProductVersion(ReleaseReference reference)
+        {
+            var versionDirectory = _stateStore.VersionDirectory(reference);
+            var envelope = _verifier.VerifyInstalledRelease(reference, versionDirectory);
+            InstalledProductRegistration.TrySetVersion(envelope.Manifest.Version);
         }
 
         public bool LaunchAndAwaitHandshake(

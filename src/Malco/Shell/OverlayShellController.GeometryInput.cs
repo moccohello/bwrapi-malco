@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -55,6 +54,13 @@ namespace Malco.Shell
                    NativeMethods.IsWindowVisible(_targetWindow.Handle) && !NativeMethods.IsIconic(_targetWindow.Handle);
         }
 
+        private bool IsTrackedTargetMinimized()
+        {
+            return _targetWindow != null && _targetWindow.Handle != IntPtr.Zero &&
+                   NativeMethods.IsWindow(_targetWindow.Handle) &&
+                   NativeMethods.IsIconic(_targetWindow.Handle);
+        }
+
         private void SetOverlayBounds(Rect rect, bool clampWidgets, bool force = false)
         {
             if (!force && Math.Abs(_view.OverlayLeft - rect.Left) <= .5d &&
@@ -105,16 +111,10 @@ namespace Malco.Shell
         private void SetInputMode(bool interactive)
         {
             if (_handle == IntPtr.Zero) return;
-            var desiredOwner = _settings.EditorMode && HasUsableTargetWindow()
-                ? _targetWindow.Handle
-                : IntPtr.Zero;
-            var actualOwner = ApplyWindowOwner(desiredOwner);
             var exStyle = _appliedExtendedStyle != int.MinValue
                 ? _appliedExtendedStyle
                 : NativeMethods.GetWindowLong(_handle, NativeMethods.GwlExStyle);
-            var requiresStandaloneTaskWindow =
-                _settings.EditorMode && actualOwner == IntPtr.Zero;
-            if (requiresStandaloneTaskWindow) exStyle |= WsExAppWindow; else exStyle &= ~WsExAppWindow;
+            exStyle |= WsExAppWindow;
             if (interactive) { exStyle &= ~WsExTransparent; exStyle &= ~WsExNoActivate; }
             else { exStyle |= WsExTransparent; exStyle |= WsExNoActivate; }
             if (_appliedExtendedStyle == exStyle) return;
@@ -129,47 +129,6 @@ namespace Malco.Shell
             _frameChangePending = true;
         }
 
-        private IntPtr ApplyWindowOwner(IntPtr desiredOwner)
-        {
-            if (_handle == IntPtr.Zero) return IntPtr.Zero;
-            var currentOwner = NativeMethods.GetWindow(_handle, NativeMethods.GwOwner);
-            if (currentOwner == desiredOwner)
-            {
-                _failedOwnerHandle = IntPtr.Zero;
-                _nextOwnerRetryTimestamp = 0;
-                return currentOwner;
-            }
-            var now = Stopwatch.GetTimestamp();
-            if (_failedOwnerHandle == desiredOwner && now < _nextOwnerRetryTimestamp)
-                return currentOwner;
-
-            NativeMethods.SetWindowLongPtr(
-                _handle,
-                NativeMethods.GwlpHwndParent,
-                desiredOwner);
-            var actualOwner = NativeMethods.GetWindow(_handle, NativeMethods.GwOwner);
-            if (actualOwner != desiredOwner && desiredOwner != IntPtr.Zero)
-            {
-                NativeMethods.SetWindowLongPtr(
-                    _handle,
-                    NativeMethods.GwlpHwndParent,
-                    IntPtr.Zero);
-                actualOwner = NativeMethods.GetWindow(_handle, NativeMethods.GwOwner);
-            }
-            if (actualOwner == desiredOwner)
-            {
-                _failedOwnerHandle = IntPtr.Zero;
-                _nextOwnerRetryTimestamp = 0;
-            }
-            else
-            {
-                _failedOwnerHandle = desiredOwner;
-                _nextOwnerRetryTimestamp = now + Stopwatch.Frequency;
-            }
-            if (actualOwner != currentOwner) _frameChangePending = true;
-            return actualOwner;
-        }
-
         private void ApplyWindowStacking()
         {
             if (_handle == IntPtr.Zero) return;
@@ -177,9 +136,8 @@ namespace Malco.Shell
             if (!HasUsableTargetWindow())
             {
                 if (_view.IsOverlayTopmost) _view.IsOverlayTopmost = false;
-                var targetRequired = CurrentMode == OverlayRuntimeMode.Gameplay;
-                if (targetRequired && _view.IsOverlayVisible) _view.HideOverlay();
-                else if (!targetRequired && !_view.IsOverlayVisible) _view.ShowOverlay();
+                var mustHide = IsTrackedTargetMinimized() || CurrentMode == OverlayRuntimeMode.Gameplay;
+                _view.SetOverlayPresented(!mustHide);
                 if (_frameChangePending)
                 {
                     var applied = NativeMethods.SetWindowPos(_handle, NativeMethods.HwndTop, 0, 0, 0, 0,
@@ -190,7 +148,7 @@ namespace Malco.Shell
                 }
                 return;
             }
-            if (!_view.IsOverlayVisible) _view.ShowOverlay();
+            _view.SetOverlayPresented(true);
             if (_view.IsOverlayTopmost) _view.IsOverlayTopmost = false;
             var flags = NativeMethods.SwpNoActivate | NativeMethods.SwpNoMove | NativeMethods.SwpNoSize;
             var windowAboveGame = NativeMethods.GetWindow(_targetWindow.Handle, NativeMethods.GwHwndPrev);

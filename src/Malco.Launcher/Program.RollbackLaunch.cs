@@ -73,23 +73,14 @@ namespace Malco.Launcher
             if (target == null) return (int)ExitCode.StartupFailed;
             if (requiredCandidate) return (int)ExitCode.RequiredUpdateFailed;
 
-            var rollbackActivation = stateStore.NewActivationId();
             try
             {
-                return supervisor.LaunchAndAwaitHandshake(
-                    target,
-                    rollbackActivation,
-                    requiredUpdateRecheck: requiredUpdateRecheck)
-                    ? (int)ExitCode.Success
-                    : (int)ExitCode.StartupFailed;
+                supervisor.LaunchStable(target, requiredUpdateRecheck);
+                return (int)ExitCode.Success;
             }
             catch (Exception ex) when (IsLaunchFailure(ex))
             {
                 return (int)ExitCode.StartupFailed;
-            }
-            finally
-            {
-                stateStore.DeleteMarker(rollbackActivation);
             }
         }
     }

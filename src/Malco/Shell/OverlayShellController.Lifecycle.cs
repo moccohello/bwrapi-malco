@@ -51,6 +51,10 @@ namespace Malco.Shell
             }
             SetInputMode(_settings.EditorMode || CurrentMode == OverlayRuntimeMode.SettingsOnly);
             Interlocked.Exchange(ref _geometryDirty, 1);
+            TrackStarCraftWindow();
+            if (_settings.ShutdownRequested) return;
+            ApplyRuntimeMode(_presentation.DesiredRuntimeMode, true);
+            _view.CompleteInitialVisibility();
         }
 
         public void PrepareForRuntimeShutdown()

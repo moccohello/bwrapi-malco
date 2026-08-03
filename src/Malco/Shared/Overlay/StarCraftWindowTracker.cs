@@ -12,6 +12,7 @@ namespace Malco.Overlay
     {
         private const long ForegroundBonus = 10_000_000_000L;
         private const long IconicPenalty = 5_000_000_000L;
+        private const int MinimumClientDimension = 100;
 
         private readonly OverlayConfig _config;
         private GameWindowInfo _lastResolved;
@@ -217,7 +218,7 @@ namespace Malco.Overlay
                 return false;
             }
 
-            if (!refreshGeometry)
+            if (!refreshGeometry && HasUsableClientBounds(_lastResolved.Bounds))
             {
                 window = CopyInfo(_lastResolved);
                 return true;
@@ -229,7 +230,7 @@ namespace Malco.Overlay
                 return false;
             }
 
-            if (bounds.Width <= 100 || bounds.Height <= 100 || bounds.Left <= -30000 || bounds.Top <= -30000)
+            if (!HasUsableClientBounds(bounds))
             {
                 return false;
             }
@@ -306,13 +307,10 @@ namespace Malco.Overlay
                 return true;
             }
 
-            Rectangle bounds;
-            if (!TryGetClientBounds(hWnd, out bounds))
-            {
-                return true;
-            }
-
-            if (bounds.Width <= 100 || bounds.Height <= 100 || bounds.Left <= -30000 || bounds.Top <= -30000)
+            var iconic = NativeMethods.IsIconic(hWnd);
+            var bounds = Rectangle.Empty;
+            if (!iconic &&
+                (!TryGetClientBounds(hWnd, out bounds) || !HasUsableClientBounds(bounds)))
             {
                 return true;
             }
@@ -338,6 +336,12 @@ namespace Malco.Overlay
         {
             var dpi = NativeMethods.GetDpiForWindow(hWnd);
             return dpi == 0 ? 96u : dpi;
+        }
+
+        private static bool HasUsableClientBounds(Rectangle bounds)
+        {
+            return bounds.Width > MinimumClientDimension &&
+                   bounds.Height > MinimumClientDimension;
         }
 
         private bool TryRetainTrackedProcess(GameWindowInfo window)

@@ -59,7 +59,7 @@ namespace Malco.Launcher
             var message = key == null ? null : language.FailureMessage(key);
             if (message != null)
             {
-                NativeMessageDialog.ShowError("Malco Launcher", message, language.Close);
+                LauncherDialog.ShowError("Malco Launcher", message, language);
             }
         }
     }

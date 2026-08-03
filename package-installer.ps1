@@ -74,27 +74,16 @@ try {
     $payloadRoot = Join-Path $versionRoot "payload"
     New-Item -ItemType Directory -Path $stateRoot, (Join-Path $preparedRoot "data"), (Join-Path $preparedRoot "cache"), (Join-Path $preparedRoot "staging"), $payloadRoot -Force | Out-Null
     Copy-Item -LiteralPath $latestPath -Destination (Join-Path $versionRoot "release-envelope.json")
-    $activationBytes = New-Object byte[] 32
-    $random = [Security.Cryptography.RandomNumberGenerator]::Create()
-    try { $random.GetBytes($activationBytes) } finally { $random.Dispose() }
-    $activationId = ([BitConverter]::ToString($activationBytes)).Replace('-', '').ToLowerInvariant()
     $reference = [ordered]@{ sequence = [long]$manifest.sequence; manifest_sha256 = $manifestHash }
+    # The packaged release is the stable rollback target for any update offered
+    # on first launch. LaunchStable still performs a full startup handshake.
     $state = [ordered]@{
         schema = "malco.install-state.v2"
         generation = 0
         highest_accepted_sequence = [long]$manifest.sequence
         current = $reference
         last_known_good = $null
-        pending = [ordered]@{
-            candidate = $reference
-            previous_current = $null
-            activation_id = $activationId
-            update_requirement = [string]$manifest.update_policy
-            rollback_available = $false
-            startup_attempts = 0
-            process_id = $null
-            process_start_time_utc_ticks = $null
-        }
+        pending = $null
         last_rollback = $null
     }
     [IO.File]::WriteAllText(

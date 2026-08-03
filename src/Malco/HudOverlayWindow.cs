@@ -118,6 +118,8 @@ namespace Malco
         private bool _shutdownBlocked;
         private bool _shutdownPreparationComplete;
         private bool _resourcesDisposed;
+        private bool _overlayPresentationVisible;
+        private bool _initialVisibilityComplete;
         private bool _subscriptionsDetached;
         private HudDisplayPreferences _hudDisplayPreferences;
         private string _lastShellStatusText;
@@ -182,8 +184,9 @@ namespace Malco
             Background = Brushes.Transparent;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = false;
+            ShowInTaskbar = true;
             ShowActivated = false;
+            Opacity = 0d;
             Left = 0d;
             Top = 0d;
             Width = 1280d;

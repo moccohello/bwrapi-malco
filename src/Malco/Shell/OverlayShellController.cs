@@ -60,8 +60,6 @@ namespace Malco.Shell
         private int _validityDirty;
         private int _foregroundDirty;
         private int _appliedExtendedStyle = int.MinValue;
-        private IntPtr _failedOwnerHandle;
-        private long _nextOwnerRetryTimestamp;
         private bool _frameChangePending;
         private bool _hasAppliedTargetBounds;
         private Rectangle _lastAppliedTargetDeviceBounds;
@@ -106,7 +104,7 @@ namespace Malco.Shell
         public bool HasUsableTarget { get { return HasUsableTargetWindow(); } }
         public void RefreshRuntimeMode()
         {
-            ApplyRuntimeMode(_presentation.DesiredRuntimeMode);
+            ApplyRuntimeMode(_presentation.DesiredRuntimeMode, false);
         }
 
         public void NotifyDpiChanged()
@@ -129,9 +127,9 @@ namespace Malco.Shell
             if (HasUsableTargetWindow()) NativeMethods.SetForegroundWindow(_targetWindow.Handle);
         }
 
-        private void ApplyRuntimeMode(OverlayRuntimeMode mode)
+        private void ApplyRuntimeMode(OverlayRuntimeMode mode, bool force)
         {
-            if (_hasAppliedRuntimeMode && CurrentMode == mode) return;
+            if (!force && _hasAppliedRuntimeMode && CurrentMode == mode) return;
             CurrentMode = mode;
             _hasAppliedRuntimeMode = true;
             ApplyRuntimeWindowBounds(mode);

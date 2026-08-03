@@ -14,14 +14,14 @@ namespace Malco.Shell
     internal interface IOverlayShellViewPort
     {
         Dispatcher Dispatcher { get; }
-        bool IsOverlayVisible { get; }
+        bool IsOverlayPresented { get; }
         bool IsOverlayTopmost { get; set; }
         double OverlayLeft { get; }
         double OverlayTop { get; }
         double OverlayWidth { get; }
         double OverlayHeight { get; }
-        void ShowOverlay();
-        void HideOverlay();
+        void SetOverlayPresented(bool presented);
+        void CompleteInitialVisibility();
         void ApplyShellBounds(Rect bounds, bool clampWidgets);
         void PositionSettingsButtonAtOrigin();
     }

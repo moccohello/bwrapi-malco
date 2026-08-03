@@ -95,6 +95,9 @@ namespace Malco.Launcher
                 throw new InvalidOperationException("A pending activation is required.");
             }
 
+            verifier.VerifyInstalledRelease(
+                state.Pending.Candidate,
+                stateStore.VersionDirectory(state.Pending.Candidate));
             var activationId = state.Pending.ActivationId;
             var committed = new InstallState(
                 state.Generation,
@@ -104,6 +107,7 @@ namespace Malco.Launcher
                 null,
                 null);
             stateStore.Save(committed);
+            supervisor.UpdateInstalledProductVersion(state.Pending.Candidate);
             stateStore.DeleteMarker(activationId);
             stagedStore.Delete();
             stateStore.CleanupUnreferencedVersions(
