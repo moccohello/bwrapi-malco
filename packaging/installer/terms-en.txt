@@ -4,7 +4,7 @@ To understand feature usage and compatibility across versions, Malco sends the f
 
 - Malco application version
 - Player race: Terran, Zerg, or Protoss
-- Summary of current settings: language, number of enabled features, displayed items, active alerts, and other settings
-- A random installation identifier and a random game-session identifier used to prevent duplicate submissions
+- Summary of current Malco settings
+- A random installation identifier and a random game-session identifier
 
 This data collection is required to install and use Malco and cannot be separately enabled or disabled in the application. If you do not agree, cancel the installation.
