@@ -8,6 +8,8 @@ namespace Malco.Data
         public OverlayDemandReceipt SetDemand(OverlayChannelDemand demand)
         {
             if (demand == null) throw new ArgumentNullException(nameof(demand));
+            OverlayChannelDemand previousDemand;
+            OverlayDemandReceipt receipt;
             lock (_demandGate)
             {
                 if (IsClosing) return new OverlayDemandReceipt(_demandEpoch, _demand);
@@ -16,14 +18,18 @@ namespace Malco.Data
                     _demand.NeedsCommands == demand.NeedsCommands)
                     return new OverlayDemandReceipt(_demandEpoch, _demand);
 
-                OverlayChannelDemand previousDemand = _demand;
+                previousDemand = _demand;
                 _demand = demand;
                 var epoch = ++_demandEpoch;
-                _semanticWake.Set();
-                _projectionWake.Set();
-                _publication.ApplyDemandChange(previousDemand, demand, epoch);
-                return new OverlayDemandReceipt(epoch, demand);
+                receipt = new OverlayDemandReceipt(epoch, demand);
             }
+            _semanticWake.Set();
+            _projectionWake.Set();
+            _publication.ApplyDemandChange(
+                previousDemand,
+                receipt.Demand,
+                receipt.Epoch);
+            return receipt;
         }
     }
 }

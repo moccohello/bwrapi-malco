@@ -94,13 +94,10 @@ namespace Malco.Shell.Control
                 {
                     serverLoop.GetAwaiter().GetResult();
                 }
-                catch (OperationCanceledException)
-                {
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-                catch (IOException)
+                catch (Exception error) when (
+                    error is OperationCanceledException ||
+                    error is ObjectDisposedException ||
+                    error is IOException)
                 {
                 }
                 catch (Exception error)
@@ -209,21 +206,21 @@ namespace Malco.Shell.Control
             {
                 deadline.CancelAfter(RequestDeadline);
                 var sameSessionClient = IsSameSessionClient(server);
-                var challenge = new byte[32];
+                var challenge = new byte[MalcoControlFrameCodec.NonceBytes];
                 RandomNumberGenerator.Fill(challenge);
-                await MalcoControlProtocol.WriteFrameAsync(
+                await MalcoControlFrameCodec.WriteFrameAsync(
                     server,
-                    MalcoControlProtocol.CreateChallengeFrame(challenge),
+                    MalcoControlFrameCodec.CreateChallengeFrame(challenge),
                     deadline.Token).ConfigureAwait(false);
 
-                var request = new byte[MalcoControlProtocol.RequestBytes];
-                await MalcoControlProtocol.ReadExactlyAsync(
+                var request = new byte[MalcoControlFrameCodec.RequestBytes];
+                await MalcoControlFrameCodec.ReadExactlyAsync(
                     server,
                     request,
                     deadline.Token).ConfigureAwait(false);
 
                 byte[] requestNonce;
-                var valid = MalcoControlProtocol.TryValidateQuitRequest(
+                var valid = MalcoControlFrameCodec.TryValidateQuitRequest(
                     request,
                     challenge,
                     out requestNonce);
@@ -234,43 +231,29 @@ namespace Malco.Shell.Control
                     _dispatcher.HasShutdownFinished)
                 {
                     var refusedStatus = valid
-                        ? MalcoControlProtocol.Refused
-                        : MalcoControlProtocol.InvalidProtocol;
-                    await MalcoControlProtocol.WriteFrameAsync(
+                        ? MalcoControlFrameCodec.Refused
+                        : MalcoControlFrameCodec.InvalidProtocol;
+                    await MalcoControlFrameCodec.WriteFrameAsync(
                         server,
-                        MalcoControlProtocol.CreateResponseFrame(refusedStatus, requestNonce),
+                        MalcoControlFrameCodec.CreateResponseFrame(refusedStatus, requestNonce),
                         deadline.Token).ConfigureAwait(false);
                     return;
                 }
 
                 var started = new TaskCompletionSource<bool>(
                     TaskCreationOptions.RunContinuationsAsynchronously);
-                var commit = new TaskCompletionSource<bool>(
-                    TaskCreationOptions.RunContinuationsAsynchronously);
-                try
+                _ = _dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _ = _dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        started.TrySetResult(true);
-                        if (commit.Task.GetAwaiter().GetResult())
-                        {
-                            _intentSink.RequestQuit();
-                        }
-                    }));
-                    await started.Task.WaitAsync(deadline.Token).ConfigureAwait(false);
-                    await MalcoControlProtocol.WriteFrameAsync(
-                        server,
-                        MalcoControlProtocol.CreateResponseFrame(
-                            MalcoControlProtocol.Accepted,
-                            requestNonce),
-                        deadline.Token).ConfigureAwait(false);
-                    commit.TrySetResult(true);
-                }
-                catch
-                {
-                    commit.TrySetResult(false);
-                    throw;
-                }
+                    started.TrySetResult(true);
+                }));
+                await started.Task.WaitAsync(deadline.Token).ConfigureAwait(false);
+                await MalcoControlFrameCodec.WriteFrameAsync(
+                    server,
+                    MalcoControlFrameCodec.CreateResponseFrame(
+                        MalcoControlFrameCodec.Accepted,
+                        requestNonce),
+                    deadline.Token).ConfigureAwait(false);
+                _ = _dispatcher.BeginInvoke(new Action(_intentSink.RequestQuit));
             }
         }
 

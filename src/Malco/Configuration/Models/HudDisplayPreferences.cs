@@ -62,6 +62,14 @@ namespace Malco.Configuration.Models
 
         public bool ShowTransportCargo { get; }
 
+        public bool HasUnitSpatialOverlays =>
+            ShowTransportCargo ||
+            _abilityDisplayModes.Values.Any(mode =>
+                !string.Equals(
+                    mode,
+                    MalcoPreferenceValues.AbilityHidden,
+                    StringComparison.Ordinal));
+
         public string WorkerCountStyle { get; }
 
         public string UnitIconSize { get; }

@@ -1,8 +1,8 @@
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using Malco.Configuration.Models;
 using Malco.Localization;
 using Malco.Settings.Contracts;
 
@@ -111,21 +111,17 @@ namespace Malco.Settings.Views
             {
                 return;
             }
-            _actions.SelectedWidgetKey = widget.Key;
             _actions.SelectWidget(widget.Key);
             RefreshLayoutEditorState();
         }
 
         internal void RefreshLayoutEditorState()
         {
-            var definition = HudWidgetRegistry.EditorFeatures().FirstOrDefault(feature =>
-                string.Equals(feature.Key, _actions.SelectedWidgetKey, StringComparison.OrdinalIgnoreCase));
-            WidgetLayout selectedLayout = null;
-            if (definition != null && _actions.Layout.Widgets != null)
-            {
-                _actions.Layout.Widgets.TryGetValue(definition.Key, out selectedLayout);
-            }
-            var hidden = selectedLayout != null && !selectedLayout.Enabled;
+            var definition = HudWidgetRegistry.Find(_actions.SelectedWidgetKey);
+            WidgetLayoutSnapshot selectedLayout = default;
+            var hasSelectedLayout = definition != null &&
+                                    _actions.LayoutSnapshot.Widgets.TryGetValue(definition.Key, out selectedLayout);
+            var hidden = hasSelectedLayout && !selectedLayout.Enabled;
             Status.Text = definition == null
                 ? UiText.Get("Select a HUD panel")
                 : UiText.Get(definition.EditorLabel) +

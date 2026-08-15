@@ -26,7 +26,7 @@ namespace Malco.Settings.Views
                 _palette.MutedBrush));
             row.Children.Add(copy);
 
-            var current = MalcoPreferenceValues.NormalizeWorkerCountStyle(_actions.Layout.WorkerCountStyle);
+            var current = MalcoPreferenceValues.NormalizeWorkerCountStyle(_actions.LayoutSnapshot.WorkerCountStyle);
             var options = new StackPanel { Orientation = Orientation.Horizontal };
             AddWorkerCountStyleOption(
                 options,
@@ -96,7 +96,7 @@ namespace Malco.Settings.Views
             copy.Children.Add(_palette.Text(UiText.Get("Completion display mode"), 14d, FontWeights.SemiBold, _palette.TextBrush));
             copy.Children.Add(_palette.Text(UiText.Get("Choose how active upgrades and research show progress."), 12d, FontWeights.Normal, _palette.MutedBrush));
             row.Children.Add(copy);
-            var current = MalcoPreferenceValues.NormalizeCompletionMode(_actions.Layout.CompletionDisplayMode);
+            var current = MalcoPreferenceValues.NormalizeCompletionMode(_actions.LayoutSnapshot.CompletionDisplayMode);
             var options = new StackPanel { Orientation = Orientation.Horizontal };
             var countdown = SegmentButton(UiText.Get("Countdown"),
                 string.Equals(current, MalcoPreferenceValues.Countdown10Seconds, StringComparison.Ordinal),
@@ -154,7 +154,7 @@ namespace Malco.Settings.Views
                 _palette.MutedBrush));
             row.Children.Add(copy);
 
-            var current = _actions.Layout.GetIconSize(featureKey);
+            var current = HudWidgetRegistry.GetIconSize(_actions.LayoutSnapshot, featureKey);
             var options = new StackPanel { Orientation = Orientation.Horizontal };
             AddIconSizeOption(options, featureKey, current, MalcoPreferenceValues.IconSmall, "Small");
             AddIconSizeOption(options, featureKey, current, MalcoPreferenceValues.IconMedium, "Medium");
@@ -212,7 +212,7 @@ namespace Malco.Settings.Views
         private FrameworkElement BuildCompletionCountdownSelector()
         {
             var current = MalcoPreferenceValues.NormalizeCompletionCountdownSeconds(
-                _actions.Layout.CompletionCountdownSeconds);
+                _actions.LayoutSnapshot.CompletionCountdownSeconds);
             var row = new Grid();
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -295,5 +295,6 @@ namespace Malco.Settings.Views
                 Child = row
             };
         }
+
     }
 }

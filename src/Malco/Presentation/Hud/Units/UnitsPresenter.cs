@@ -6,23 +6,31 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using Malco.Data;
 using Malco.Configuration.Models;
+using Malco.Data;
 using Malco.Localization;
 using Malco.Models;
 using Malco.Presentation.Hud.Tiles;
 
 namespace Malco.Presentation.Hud.Units
 {
-    internal sealed class UnitsPresenter
+    internal enum UnitHudContent
+    {
+        Units,
+        Buildings
+    }
+
+    internal abstract class UnitCountsPresenter
     {
         private readonly HudTileFactory _tileFactory;
+        private readonly UnitHudContent _content;
         private long _sessionGeneration = -1;
         private string _semanticKey;
 
-        public UnitsPresenter(HudTileFactory tileFactory, Brush mutedBrush)
+        protected UnitCountsPresenter(HudTileFactory tileFactory, Brush mutedBrush, UnitHudContent content)
         {
             _tileFactory = tileFactory ?? throw new ArgumentNullException(nameof(tileFactory));
+            _content = content;
             View = BuildView(mutedBrush ?? throw new ArgumentNullException(nameof(mutedBrush)));
         }
 
@@ -32,30 +40,32 @@ namespace Malco.Presentation.Hud.Units
         {
             if (input.Preferences == null) throw new ArgumentException("Display preferences are required.", nameof(input));
             EnsureSession(input.SessionGeneration);
-            var units = new List<UnitCount>();
             var ownedRaces = input.Snapshot != null
                 ? OwnedTechnologyRacePolicy.Resolve(
                     input.Snapshot.Race,
                     input.Snapshot.UnitCounts,
                     input.Snapshot.BuildingCounts)
                 : new[] { Race.Unknown };
-            if (input.Snapshot != null && input.Snapshot.UnitCounts != null)
-            {
-                units.AddRange(input.Snapshot.UnitCounts.Where(unit => unit != null &&
-                    unit.Count > 0 &&
-                    !BwapiBroodWarTables.IsWorkerUnitId(unit.UnitId) &&
-                    !IsBuildingUnit(unit) &&
-                    input.Preferences.IsItemShown(TechTreeItem.UnitKey(unit.UnitId)))
-                    .OrderBy(unit => TechTreeCatalog.GetDisplayOrder(ownedRaces, TechTreeItem.UnitKey(unit.UnitId)))
-                    .ThenBy(unit => unit.UnitId));
-            }
+            var counts = input.Snapshot == null
+                ? null
+                : _content == UnitHudContent.Buildings
+                    ? input.Snapshot.BuildingCounts
+                    : input.Snapshot.UnitCounts;
+            var items = counts == null
+                ? new List<UnitCount>()
+                : counts.Where(unit => ShouldDisplay(unit, input.Preferences))
+                    .OrderBy(unit => TechTreeCatalog.GetDisplayOrder(ownedRaces, ItemKey(unit)))
+                    .ThenBy(unit => unit.UnitId)
+                    .ToList();
 
-            ApplyVisibility(units.Count, input.EditorMode, UiText.Get("No units"));
-            var iconSize = input.Preferences.UnitIconSize;
-            var semanticKey = iconSize + "|" + string.Join(",", ownedRaces) + "|" + BuildSemanticKey(units);
+            ApplyVisibility(items.Count, input.EditorMode);
+            var iconSize = _content == UnitHudContent.Buildings
+                ? input.Preferences.BuildingIconSize
+                : input.Preferences.UnitIconSize;
+            var semanticKey = iconSize + "|" + string.Join(",", ownedRaces) + "|" + BuildSemanticKey(items);
             if (string.Equals(_semanticKey, semanticKey, StringComparison.Ordinal))
             {
-                return units.Count > 0;
+                return items.Count > 0;
             }
 
             _semanticKey = semanticKey;
@@ -63,13 +73,11 @@ namespace Malco.Presentation.Hud.Units
             var metrics = TileMetrics.FromWidth(
                 MalcoPreferenceValues.IconTileWidth(iconSize),
                 MalcoPreferenceValues.IconTileGap(iconSize));
-            foreach (var unit in units)
+            foreach (var item in items)
             {
-                View.Tiles.Children.Add(BuildTile(unit, metrics));
+                View.Tiles.Children.Add(BuildTile(item, metrics));
             }
-
-            ApplyVisibility(units.Count, input.EditorMode, UiText.Get("No units"));
-            return units.Count > 0;
+            return items.Count > 0;
         }
 
         public void ResetSession(long generation)
@@ -77,7 +85,7 @@ namespace Malco.Presentation.Hud.Units
             _sessionGeneration = generation;
             _semanticKey = null;
             View.Tiles.Children.Clear();
-            ApplyVisibility(0, false, UiText.Get("No units"));
+            ApplyVisibility(0, false);
         }
 
         public void Invalidate() => _semanticKey = null;
@@ -87,43 +95,55 @@ namespace Malco.Presentation.Hud.Units
             if (_sessionGeneration != generation) ResetSession(generation);
         }
 
-        private UIElement BuildTile(UnitCount unit, TileMetrics metrics)
+        private bool ShouldDisplay(UnitCount item, HudDisplayPreferences preferences)
         {
-            var displayName = UiText.GameName(unit.Name);
+            if (item == null || item.Count <= 0) return false;
+            return _content == UnitHudContent.Buildings
+                ? preferences.IsItemShown(TechTreeItem.BuildingKey(item.UnitId))
+                : !BwapiBroodWarTables.IsWorkerUnitId(item.UnitId) &&
+                  !IsBuildingUnit(item) &&
+                  preferences.IsItemShown(TechTreeItem.UnitKey(item.UnitId));
+        }
+
+        private string ItemKey(UnitCount item) => _content == UnitHudContent.Buildings
+            ? TechTreeItem.BuildingKey(item.UnitId)
+            : TechTreeItem.UnitKey(item.UnitId);
+
+        private UIElement BuildTile(UnitCount item, TileMetrics metrics)
+        {
+            var displayName = UiText.GameName(item.Name);
             return _tileFactory.BuildImageTile(
-                _tileFactory.GetGrayscaleUnitIcon(unit),
+                _tileFactory.GetGrayscaleUnitIcon(item),
                 string.IsNullOrEmpty(displayName) ? "?" : displayName.Substring(0, 1).ToUpperInvariant(),
-                unit.Count > 0 ? unit.Count.ToString(CultureInfo.InvariantCulture) : string.Empty,
+                item.Count.ToString(CultureInfo.InvariantCulture),
                 displayName,
                 metrics,
                 false,
                 HudTileBadgeStyle.Count);
         }
 
-        private void ApplyVisibility(int count, bool editorMode, string emptyText)
+        private void ApplyVisibility(int count, bool editorMode)
         {
             View.Tiles.Visibility = count == 0 ? Visibility.Collapsed : Visibility.Visible;
-            View.EmptyText.Text = emptyText;
+            View.EmptyText.Text = UiText.Get(_content == UnitHudContent.Buildings ? "No buildings" : "No units");
             View.EmptyText.Visibility = editorMode && count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        internal static string BuildSemanticKey(IEnumerable<UnitCount> units) => string.Join(
+        private static string BuildSemanticKey(IEnumerable<UnitCount> items) => string.Join(
             "|",
-            (units ?? Array.Empty<UnitCount>())
-                .Select(unit => unit.UnitId.ToString(CultureInfo.InvariantCulture) + ":" +
-                                unit.Count.ToString(CultureInfo.InvariantCulture) + ":" +
-                                (unit.IconKey ?? string.Empty)));
+            items.Select(item => item.UnitId.ToString(CultureInfo.InvariantCulture) + ":" +
+                                 item.Count.ToString(CultureInfo.InvariantCulture) + ":" +
+                                 (item.IconKey ?? string.Empty)));
 
         private static bool IsBuildingUnit(UnitCount unit) =>
-            unit != null && (unit.IsBuilding || BwapiBroodWarTables.IsKnownBuildingUnitId(unit.UnitId));
+            unit.IsBuilding || BwapiBroodWarTables.IsKnownBuildingUnitId(unit.UnitId);
 
-        internal static UnitHudViewHandles BuildView(Brush mutedBrush)
+        private static UnitHudViewHandles BuildView(Brush mutedBrush)
         {
             var body = new StackPanel { Margin = new Thickness(8d, 2d, 8d, 2d) };
             var tiles = new WrapPanel { Orientation = Orientation.Horizontal };
             var empty = new TextBlock
             {
-                Text = string.Empty,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 13d,
                 FontWeight = FontWeights.Medium,
@@ -140,6 +160,14 @@ namespace Malco.Presentation.Hud.Units
             body.Children.Add(tiles);
             body.Children.Add(empty);
             return new UnitHudViewHandles(body, tiles, empty);
+        }
+    }
+
+    internal sealed class UnitsPresenter : UnitCountsPresenter
+    {
+        public UnitsPresenter(HudTileFactory tileFactory, Brush mutedBrush)
+            : base(tileFactory, mutedBrush, UnitHudContent.Units)
+        {
         }
     }
 }

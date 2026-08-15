@@ -34,12 +34,10 @@ namespace Malco.Bootstrap
         private readonly InstalledLaunchAuthorization _installedLaunchAuthorization;
         private HudOverlayWindow _window;
         private OverlayComposition _composition;
-        private BwrApiEmbeddedRuntimeProvider _provider;
+        private OverlayRuntimeSessionHost _runtimeHost;
         private IDisposable _providerPendingOwnership;
         private IGameDataProviderLifecycle _providerPendingLifecycle;
-        private TimeSpan _providerShutdownTimeout = TimeSpan.FromMilliseconds(OverlayConfig.RuntimeProviderShutdownTimeoutMs);
-        private OverlayShutdownResult _constructionShutdownResult =
-            new OverlayShutdownResult(OverlayShutdownStatus.Complete, string.Empty);
+        private string _constructionShutdownFailureMessage = string.Empty;
         private GameCoordinator _coordinator;
         private OverlayShellController _shell;
         private CompositionFramePump _framePump;
@@ -58,9 +56,6 @@ namespace Malco.Bootstrap
             try
             {
             var config = new OverlayConfig();
-            config.Normalize();
-            _providerShutdownTimeout = TimeSpan.FromMilliseconds(
-                Math.Max(1, config.ProviderShutdownTimeoutMs));
             var layoutStore = new HudLayoutFileStore(AppPaths.UserLayoutPath);
             var layoutLoadResult = layoutStore.Load();
             UiText.Initialize(layoutLoadResult.Layout.Language);
@@ -113,21 +108,17 @@ namespace Malco.Bootstrap
                     view.CoralBrush),
                 icons);
 
-            _provider = new BwrApiEmbeddedRuntimeProvider(config);
-            _providerPendingOwnership = _provider as IDisposable;
-            var providerLifecycle = _provider as IGameDataProviderLifecycle;
-            if (providerLifecycle == null)
-            {
-                throw new InvalidOperationException("The BWRAPI observer does not expose its lifecycle contract.");
-            }
+            var provider = new BwrApiEmbeddedRuntimeProvider(config);
+            _providerPendingOwnership = provider;
+            var providerLifecycle = (IGameDataProviderLifecycle)provider;
             _providerPendingLifecycle = providerLifecycle;
             providerLifecycle.Start();
             var coordinator = new GameCoordinator(
                 providerLifecycle,
-                _provider,
-                _provider,
-                _provider,
-                _provider,
+                provider,
+                provider,
+                provider,
+                provider,
                 config.ProviderShutdownTimeoutMs);
             _coordinator = coordinator;
             _providerPendingLifecycle = null;
@@ -161,11 +152,11 @@ namespace Malco.Bootstrap
             Capture(hotkey);
             var tray = new TrayController(window.Dispatcher, window);
             Capture(tray);
-            var shell = new OverlayShellController(config, window, window, window, hotkey, framePump, _provider);
+            var shell = new OverlayShellController(config, window, window, window, hotkey, framePump, provider);
             _shell = shell;
             Capture(shell);
             var metrics = OverlayHudMetrics.CreateFromEnvironment(
-                _provider as IProviderOptimizationMetricsSource,
+                provider,
                 framePump);
             Capture(metrics);
             var scenePresenter = new OverlayScenePresenter();
@@ -198,18 +189,25 @@ namespace Malco.Bootstrap
                 shell,
                 controlServer,
                 tray);
-            Capture(applicationSession);
-
+            var runtimeHost = new OverlayRuntimeSessionHost(
+                coordinator,
+                telemetry,
+                scheduler,
+                clock,
+                projectionCommitSubscription,
+                framePump,
+                shell,
+                new OverlayShutdownController(),
+                applicationSession,
+                window.HideOverlayForRuntimeShutdown);
+            _runtimeHost = runtimeHost;
             _composition = new OverlayComposition
             {
-                ApplicationSession = applicationSession,
-                Coordinator = coordinator,
-                ApplicationController = applicationController,
+                RuntimeHost = runtimeHost,
                 ProjectionPresentation = projectionPresentation,
                 LayoutLoadResult = layoutLoadResult,
                 SettingsController = settingsController,
                 SettingsPersistence = settingsPersistence,
-                Telemetry = telemetry,
                 Icons = icons,
                 HudTileFactory = hudTileFactory,
                 WorkersPresenter = workers,
@@ -221,14 +219,8 @@ namespace Malco.Bootstrap
                 SpatialPresenter = spatial,
                 ScenePresenter = scenePresenter,
                 SceneViewController = sceneViewController,
-                PresentationScheduler = scheduler,
-                PresentationClock = clock,
                 FramePump = framePump,
-                ProjectionCommitSubscription = projectionCommitSubscription,
-                ShutdownController = new OverlayShutdownController(),
-                HotkeyController = hotkey,
                 TrayController = tray,
-                ControlServer = controlServer,
                 ShellController = shell
             };
             window.Bind(_composition);
@@ -241,16 +233,11 @@ namespace Malco.Bootstrap
                 if (!CleanupConstructionFailure())
                 {
                     throw new InvalidOperationException(
-                        ex.Message + " " + _constructionShutdownResult.Message,
+                        ex.Message + " " + _constructionShutdownFailureMessage,
                         ex);
                 }
                 throw;
             }
-        }
-
-        internal OverlayShutdownResult ConstructionShutdownResult
-        {
-            get { return _constructionShutdownResult; }
         }
 
         public void Dispose()
@@ -267,21 +254,14 @@ namespace Malco.Bootstrap
                 _disposed = true;
                 return;
             }
-            _composition.ShellController.PrepareForRuntimeShutdown();
-            _composition.ControlServer.Dispose();
-            _composition.ProjectionCommitSubscription.Dispose();
-            _composition.FramePump.Stop();
-            _composition.Coordinator.UnregisterStateCommitSink(_composition.PresentationScheduler);
-            if (_composition.Telemetry != null)
-                _composition.Coordinator.UnregisterStateCommitSink(_composition.Telemetry);
-            _composition.PresentationScheduler.Stop();
-            _composition.PresentationClock.Stop();
+            _runtimeHost.BeginShutdown();
             _window.DetachSubscriptionsForFallback();
-            var shutdown = _composition.ShutdownController.TryStopApplication(_composition.Coordinator);
+            var shutdown = _runtimeHost.TryStop();
             if (!shutdown.IsComplete) return;
 
             _window.MarkFallbackResourcesDisposed();
-            DisposeCaptured();
+            _runtimeHost.Complete();
+            _constructionCleanup.Clear();
             _disposed = true;
         }
 
@@ -292,6 +272,32 @@ namespace Malco.Bootstrap
 
         private bool CleanupConstructionFailure()
         {
+            if (_runtimeHost != null)
+            {
+                try
+                {
+                    _runtimeHost.BeginShutdown();
+                    _window?.DetachSubscriptionsForFallback();
+                    var shutdown = _runtimeHost.TryStop();
+                    if (!shutdown.IsComplete)
+                    {
+                        _constructionShutdownFailureMessage =
+                            shutdown.Message + " Disposing the bootstrapper retries construction cleanup.";
+                        return false;
+                    }
+                    _runtimeHost.Complete();
+                    _constructionCleanup.Clear();
+                    _window?.MarkFallbackResourcesDisposed();
+                    _constructionShutdownFailureMessage = string.Empty;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    SetConstructionShutdownBlocked("Runtime construction cleanup failed: " + ex.Message);
+                    return false;
+                }
+            }
+
             try { _shell?.PrepareForRuntimeShutdown(); }
             catch { }
             try { _projectionCommitSubscription?.Dispose(); }
@@ -306,9 +312,8 @@ namespace Malco.Bootstrap
                     var result = new OverlayShutdownController().TryStopApplication(_coordinator);
                     if (!result.IsComplete)
                     {
-                        _constructionShutdownResult = new OverlayShutdownResult(
-                            OverlayShutdownStatus.Blocked,
-                            result.Message + " Disposing the bootstrapper retries construction cleanup.");
+                        _constructionShutdownFailureMessage =
+                            result.Message + " Disposing the bootstrapper retries construction cleanup.";
                         return false;
                     }
                 }
@@ -324,7 +329,7 @@ namespace Malco.Bootstrap
                 try
                 {
                     _providerPendingLifecycle.BeginStop();
-                    stop = _providerPendingLifecycle.TryStop(_providerShutdownTimeout);
+                    stop = _providerPendingLifecycle.TryStop(TimeSpan.FromMilliseconds(OverlayConfig.RuntimeProviderShutdownTimeoutMs));
                 }
                 catch (Exception ex)
                 {
@@ -350,18 +355,15 @@ namespace Malco.Bootstrap
             }
             DisposeCaptured();
             if (_window != null) _window.MarkFallbackResourcesDisposed();
-            _constructionShutdownResult = new OverlayShutdownResult(
-                OverlayShutdownStatus.Complete,
-                string.Empty);
+            _constructionShutdownFailureMessage = string.Empty;
             return true;
         }
 
         private void SetConstructionShutdownBlocked(string message)
         {
-            _constructionShutdownResult = new OverlayShutdownResult(
-                OverlayShutdownStatus.Blocked,
+            _constructionShutdownFailureMessage =
                 (message ?? "Construction cleanup is blocked.") +
-                " Disposing the bootstrapper retries construction cleanup.");
+                " Disposing the bootstrapper retries construction cleanup.";
         }
 
         private void DisposeCaptured()

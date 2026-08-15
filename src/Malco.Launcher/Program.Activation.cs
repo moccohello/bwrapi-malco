@@ -61,15 +61,15 @@ namespace Malco.Launcher
                 return state;
             }
 
-            var previous = currentValid ? state.Current?.Clone() : null;
+            var previous = currentValid ? state.Current : null;
             var selected = new InstallState(
                 state.Generation,
                 candidate.Sequence,
-                candidate.Clone(),
-                previous?.Clone(),
+                candidate,
+                previous,
                 new PendingActivation(
-                    candidate.Clone(),
-                    previous?.Clone(),
+                    candidate,
+                    previous,
                     stateStore.NewActivationId(),
                     requirement,
                     previous != null,
@@ -169,7 +169,7 @@ namespace Malco.Launcher
                 }
                 catch (Exception exception) when (IsLaunchFailure(exception))
                 {
-                    // 최신 서명 정보를 다시 확인할 수 있도록 아래 온라인 확인으로 진행한다.
+                    // 롤백 기록을 재검증할 수 없으면 최신 피드로 필수 여부를 판단한다.
                 }
             }
 
@@ -184,8 +184,7 @@ namespace Malco.Launcher
             catch (Exception exception) when (IsUpdateFailure(exception))
             {
                 requiredUpdateRecheck = IsDeferredUpdateCheckFailure(exception);
-                // 연결할 수 없을 때는 마지막으로 검증된 설치본을 사용할 수 있다.
-                // 서명된 필수 릴리스를 확인한 뒤부터는 아래 경로에서 적용 실패를 차단한다.
+                // 피드를 확인할 수 없으면 이미 검증한 staged update만 사용한다.
                 return verifiedStagedUpdate;
             }
 
@@ -199,7 +198,7 @@ namespace Malco.Launcher
                 StringComparison.Ordinal);
             if (latest.Manifest.Sequence <= state.HighestAcceptedSequence)
             {
-                // 필수 버전이 이미 실패해 롤백된 상태에서는 이전 버전을 다시 실행하지 않는다.
+                // 이미 실패해 롤백한 필수 버전은 다시 실행하지 않는다.
                 return required
                     ? new StartupUpdateResult(
                         StartupUpdateDisposition.RequiredUpdateFailed,

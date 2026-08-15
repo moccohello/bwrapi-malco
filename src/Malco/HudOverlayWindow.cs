@@ -10,8 +10,6 @@ using Malco.Application.Projection;
 using Malco.Bootstrap;
 using Malco.Configuration;
 using Malco.Configuration.Models;
-using Malco.Game.Services;
-using Malco.Integration.Telemetry;
 using Malco.Localization;
 using Malco.Models;
 using Malco.Presentation;
@@ -21,16 +19,13 @@ using Malco.Presentation.Hud.Tiles;
 using Malco.Presentation.Hud.Units;
 using Malco.Presentation.Hud.Upgrades;
 using Malco.Presentation.Hud.Workers;
-using Malco.Presentation.Spatial;
 using Malco.Presentation.Scheduling;
+using Malco.Presentation.Spatial;
 using Malco.Settings.Contracts;
 using Malco.Settings.Controller;
 using Malco.Settings.Persistence;
 using Malco.Settings.Views;
 using Malco.Shell;
-using Malco.Shell.Control;
-using Malco.Shell.Input;
-using Malco.Shell.Shutdown;
 using Malco.Shell.Tray;
 
 namespace Malco
@@ -70,12 +65,11 @@ namespace Malco
         internal static readonly SolidColorBrush SettingsChipBorderBrush = FrozenBrush(SettingsVisualTokens.ChipBorder);
         private static readonly SolidColorBrush EditorHitSurfaceBrush = FrozenBrush("#01000000");
 
-        private GameCoordinator _coordinator;
+        private OverlayRuntimeSessionHost _runtimeHost;
         private ProjectionPresentationAdapter _projectionPresentation;
         private LayoutLoadResult _layoutLoadResult;
         private SettingsController _settingsController;
         private SettingsPersistenceSession _settingsPersistence;
-        private MalcoTelemetryIntegration _telemetry;
         private IconLocator _icons;
         private WorkersPresenter _workersPresenter;
         private HudTileFactory _hudTileFactory;
@@ -91,16 +85,9 @@ namespace Malco
         private SpatialPresenter _spatialPresenter;
         private OverlayScenePresenter _scenePresenter;
         private OverlaySceneViewController _sceneViewController;
-        private DispatcherPresentationScheduler _presentationScheduler;
-        private DispatcherTimer _presentationClock;
         private readonly DispatcherTimer _settingsStatusClock;
         private CompositionFramePump _framePump;
-        private ProjectionCommitSubscription _projectionCommitSubscription;
-        private OverlayShutdownController _shutdownController;
-        private OverlayApplicationSession _applicationSession;
-        private HotkeyController _hotkeyController;
         private TrayController _trayController;
-        private MalcoControlServer _controlServer;
         private OverlayShellController _shellController;
         private bool _compositionBound;
         private bool _hudTemporarilyHidden;
@@ -251,13 +238,11 @@ namespace Malco
             if (_compositionBound) throw new InvalidOperationException("Overlay composition is already bound.");
             if (composition == null) throw new ArgumentNullException(nameof(composition));
 
-            _coordinator = composition.Coordinator;
+            _runtimeHost = composition.RuntimeHost;
             _projectionPresentation = composition.ProjectionPresentation;
             _layoutLoadResult = composition.LayoutLoadResult;
             _settingsController = composition.SettingsController;
-            _applicationSession = composition.ApplicationSession;
             _settingsPersistence = composition.SettingsPersistence;
-            _telemetry = composition.Telemetry;
             _icons = composition.Icons;
             _featureSettingsView.SetIconLocator(_icons);
             _hudTileFactory = composition.HudTileFactory;
@@ -270,19 +255,13 @@ namespace Malco
             _spatialPresenter = composition.SpatialPresenter;
             _scenePresenter = composition.ScenePresenter;
             _sceneViewController = composition.SceneViewController;
-            _presentationScheduler = composition.PresentationScheduler;
-            _presentationClock = composition.PresentationClock;
             _framePump = composition.FramePump;
-            _projectionCommitSubscription = composition.ProjectionCommitSubscription;
-            _shutdownController = composition.ShutdownController;
-            _hotkeyController = composition.HotkeyController;
             _trayController = composition.TrayController;
-            _controlServer = composition.ControlServer;
             _shellController = composition.ShellController;
-            _hudDisplayPreferences = HudDisplayPreferences.FromLayout(_settingsController.Layout);
+            _hudDisplayPreferences = HudDisplayPreferences.FromLayout(
+                _settingsController.Capture().Snapshot.ToMutable());
             _compositionBound = true;
 
-            _presentationClock.Tick += OnPresentationClock;
             BuildWidgets();
             RenderEditorTab();
             ApplyEditorMode(false);
@@ -292,8 +271,7 @@ namespace Malco
             Closed += OnClosed;
             PreviewKeyDown += OnPreviewKeyDown;
             DpiChanged += OnOverlayDpiChanged;
-            _coordinator.RegisterStateCommitSink(_presentationScheduler);
-            if (_telemetry != null) _coordinator.RegisterStateCommitSink(_telemetry);
+            _runtimeHost.Start();
         }
 
         private static string ProgramVersion
@@ -331,11 +309,12 @@ namespace Malco
 
         internal void MarkFallbackResourcesDisposed() { _resourcesDisposed = true; }
 
+        internal void HideOverlayForRuntimeShutdown() => SetOverlayPresentation(false);
+
         private void DetachWindowSubscriptions()
         {
             if (_subscriptionsDetached || !_compositionBound) return;
             _subscriptionsDetached = true;
-            _presentationClock.Tick -= OnPresentationClock;
             _settingsStatusClock.Stop();
             _settingsStatusClock.Tick -= OnSettingsStatusClock;
             SourceInitialized -= OnSourceInitialized;

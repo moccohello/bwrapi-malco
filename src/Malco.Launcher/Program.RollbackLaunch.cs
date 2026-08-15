@@ -41,7 +41,7 @@ namespace Malco.Launcher
                     : (int)ExitCode.StartupFailed;
             }
 
-            var target = pending.PreviousCurrent?.Clone();
+            var target = pending.PreviousCurrent;
             if (target != null)
             {
                 try
@@ -57,12 +57,12 @@ namespace Malco.Launcher
             var rolledBack = new InstallState(
                 state.Generation,
                 state.HighestAcceptedSequence,
-                target?.Clone(),
+                target,
                 null,
                 null,
                 new RollbackRecord(
-                    pending.Candidate.Clone(),
-                    target?.Clone()));
+                    pending.Candidate,
+                    target));
             stateStore.DeleteMarker(pending.ActivationId);
             stateStore.Save(rolledBack);
             stagedStore.Delete();

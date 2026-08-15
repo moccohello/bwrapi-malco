@@ -95,27 +95,6 @@ namespace Malco.Models
 
         public IReadOnlyList<UnitSpatialState> UnitSpatialStates { get; }
 
-        public GameSnapshot WithWorkerStateStatus(string status)
-        {
-            return new GameSnapshot(
-                CapturedAt,
-                IsInMatch,
-                Race,
-                LocalPlayerId,
-                WorkersTotal,
-                WorkersIdle,
-                WorkersActive,
-                WorkersUnknown,
-                status,
-                UnitCounts,
-                BuildingCounts,
-                GasWorkerGroups,
-                MineralWorkerGroups,
-                Upgrades,
-                AvailableUpgrades,
-                UnitSpatialStates);
-        }
-
         private static IReadOnlyList<T> Freeze<T>(IEnumerable<T> values)
         {
             return Array.AsReadOnly((values ?? Array.Empty<T>()).ToArray());

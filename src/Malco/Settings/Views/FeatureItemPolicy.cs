@@ -74,16 +74,19 @@ namespace Malco.Settings.Views
                 .Select(group => group.First());
         }
 
-        public bool ReadValue(HudLayoutConfig layout, TechTreeItem item)
+        public bool ReadValue(HudLayoutSnapshot layout, TechTreeItem item)
         {
+            HudItemSettingSnapshot setting = default;
+            var hasSetting = layout != null &&
+                             layout.ItemSettings.TryGetValue(item.Key, out setting);
             switch (SettingKind)
             {
                 case FeatureItemSettingKind.AvailableAlert:
-                    return layout.IsAvailableUpgradeAlertEnabled(item.Key);
+                    return !hasSetting || setting.AvailableAlert;
                 case FeatureItemSettingKind.CompletionAlert:
-                    return layout.IsCompletionWarningEnabled(item.Key);
+                    return !hasSetting || setting.CompletionAlert;
                 case FeatureItemSettingKind.Shown:
-                    return layout.IsItemShown(item.Key);
+                    return !hasSetting || setting.Show;
                 default:
                     throw new InvalidOperationException("The feature has no item setting policy.");
             }

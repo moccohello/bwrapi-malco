@@ -65,11 +65,6 @@ namespace Malco.Settings.Views
 
         public void SetSaveError(string message, bool visible)
         {
-            if (_saveErrorBanner == null || _saveErrorMessage == null)
-            {
-                return;
-            }
-
             _saveErrorMessage.Text = visible
                 ? (message ?? UiText.Get("Settings could not be saved."))
                 : string.Empty;
@@ -98,11 +93,6 @@ namespace Malco.Settings.Views
         {
             var compact = width > 0d && width < 960d;
             var ultraCompact = width > 0d && width < 700d;
-            if (_shell == null || _navigationColumn == null)
-            {
-                return;
-            }
-
             var modeChanged = compact != _compactLayout || ultraCompact != _ultraCompactLayout;
             _compactLayout = compact;
             _ultraCompactLayout = ultraCompact;
@@ -226,14 +216,6 @@ namespace Malco.Settings.Views
                 Child = _shell,
                 Visibility = Visibility.Collapsed
             };
-            Panel.PreviewMouseLeftButtonDown += (sender, args) =>
-            {
-                if (ReferenceEquals(args.OriginalSource, Panel))
-                {
-                    _actions.Dispatch(new SettingsIntent(SettingsIntentKind.ReturnToGame));
-                    args.Handled = true;
-                }
-            };
             AutomationProperties.SetName(Panel, UiText.Get("Malco settings"));
             System.Windows.Controls.Panel.SetZIndex(Panel, 110);
             return Panel;
@@ -279,43 +261,20 @@ namespace Malco.Settings.Views
 
         public void RefreshLanguage()
         {
-            if (Panel != null)
-            {
-                AutomationProperties.SetName(Panel, UiText.Get("Malco settings"));
-            }
-            if (_headerTitle != null)
-            {
-                _headerTitle.Text = UiText.Get("Malco");
-            }
-            if (_headerSubtitle != null)
-            {
-                _headerSubtitle.Text = UiText.Get("HUD settings");
-            }
-            if (_arrangeButton != null)
-            {
-                _arrangeButton.Content = UiText.Get("Arrange HUD");
-                AutomationProperties.SetName(_arrangeButton, UiText.Get("Arrange HUD"));
-            }
-            if (_closeButton != null)
-            {
-                _closeButton.ToolTip = UiText.Get("Return to Game");
-                AutomationProperties.SetName(_closeButton, UiText.Get("Return to game and close overlay settings"));
-            }
-            if (_retrySaveButton != null)
-            {
-                _retrySaveButton.Content = UiText.Get("Retry save");
-                AutomationProperties.SetName(_retrySaveButton, UiText.Get("Retry save"));
-            }
+            AutomationProperties.SetName(Panel, UiText.Get("Malco settings"));
+            _headerTitle.Text = UiText.Get("Malco");
+            _headerSubtitle.Text = UiText.Get("HUD settings");
+            _arrangeButton.Content = UiText.Get("Arrange HUD");
+            AutomationProperties.SetName(_arrangeButton, UiText.Get("Arrange HUD"));
+            _closeButton.ToolTip = UiText.Get("Return to Game");
+            AutomationProperties.SetName(_closeButton, UiText.Get("Return to game and close overlay settings"));
+            _retrySaveButton.Content = UiText.Get("Retry save");
+            AutomationProperties.SetName(_retrySaveButton, UiText.Get("Retry save"));
             Refresh();
         }
 
         public void RefreshTemporaryHudState()
         {
-            if (_temporaryHudButton == null)
-            {
-                return;
-            }
-
             var hidden = _actions.HudTemporarilyHidden;
             var label = UiText.Get(hidden ? "Show HUD again" : "Hide HUD");
             var help = UiText.Get(hidden

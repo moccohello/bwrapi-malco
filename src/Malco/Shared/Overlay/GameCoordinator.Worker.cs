@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
+using Malco.Application.Contracts.Output;
 using Malco.Application.Scheduling;
 using Malco.Data;
 using Malco.Models;
@@ -133,6 +135,8 @@ namespace Malco.Game.Services
             var next = providerDirty
                 ? OverlayStateReducer.Compose(current, provider)
                 : current;
+            IOverlayStateCommitSink[] sinks = null;
+            OverlayReadModel committedState = null;
             lock (_publicationSync)
             {
                 if (IsClosing)
@@ -161,13 +165,15 @@ namespace Malco.Game.Services
                     if (!ReferenceEquals(next.Viewport, current.Viewport)) Interlocked.Increment(ref _viewportPublications);
                     Interlocked.Increment(ref _envelopePublications);
                     Interlocked.Exchange(ref _stableOverlayState, next);
-                    MarkStateCommittedLocked();
+                    committedState = next;
+                    sinks = SnapshotStateCommitSinksLocked();
                 }
                 else
                 {
                     Interlocked.Increment(ref _reducerNoOps);
                 }
             }
+            NotifyStateCommitted(sinks, committedState);
         }
 
         private ProviderChannelState ReadProviderChannels()
@@ -177,6 +183,8 @@ namespace Malco.Game.Services
 
         private void PublishPollingError(string message, long clearEpoch)
         {
+            IOverlayStateCommitSink[] sinks = null;
+            OverlayReadModel committedState = null;
             lock (_publicationSync)
             {
                 if (IsClosing || clearEpoch != Volatile.Read(ref _clearRequestEpoch))
@@ -185,6 +193,14 @@ namespace Malco.Game.Services
                 }
 
                 var current = Volatile.Read(ref _stableOverlayState) ?? OverlayReadModel.Empty(message);
+                if (current.Semantic.Status == ProviderStatus.Error &&
+                    string.Equals(
+                        current.Semantic.Message,
+                        message ?? string.Empty,
+                        StringComparison.Ordinal))
+                {
+                    return;
+                }
                 var currentSnapshot = current.Semantic.Snapshot;
                 var semantic = current.Semantic.WithStatus(
                     ProviderStatus.Error,
@@ -196,15 +212,33 @@ namespace Malco.Game.Services
                 Interlocked.Exchange(ref _stableOverlayState, next);
                 Interlocked.Increment(ref _semanticPublications);
                 Interlocked.Increment(ref _envelopePublications);
-                MarkStateCommittedLocked();
+                committedState = next;
+                sinks = SnapshotStateCommitSinksLocked();
             }
+            NotifyStateCommitted(sinks, committedState);
         }
 
-        private void MarkStateCommittedLocked()
+        private IOverlayStateCommitSink[] SnapshotStateCommitSinksLocked()
         {
-            foreach (var sink in _stateCommitSinks.ToArray())
+            return _stateCommitSinks.ToArray();
+        }
+
+        private static void NotifyStateCommitted(
+            IOverlayStateCommitSink[] sinks,
+            OverlayReadModel state)
+        {
+            if (sinks == null || state == null) return;
+            foreach (var sink in sinks)
             {
-                sink.MarkOverlayStateCommitted(_stableOverlayState);
+                try
+                {
+                    sink.MarkOverlayStateCommitted(state);
+                }
+                catch (Exception exception)
+                {
+                    Debug.WriteLine(
+                        "Overlay state commit sink failed: " + exception);
+                }
             }
         }
     }

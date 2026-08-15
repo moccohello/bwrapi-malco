@@ -43,33 +43,58 @@ namespace Malco.Data
             }
         }
 
-        public void Publish(ViewportProjectionState authoritativeState)
+        public void Commit(
+            ViewportProjectionState authoritativeState,
+            out IProjectionPresentationCommitSink commitSink)
         {
-            if (authoritativeState == null)
-            {
-                return;
-            }
+            commitSink = null;
+            if (authoritativeState == null) return;
 
             lock (_publishGate)
             {
-                if (Volatile.Read(ref _closing) != 0)
-                {
-                    return;
-                }
+                if (Volatile.Read(ref _closing) != 0) return;
+                if (authoritativeState.IsAuthoritativeClear !=
+                    (authoritativeState.ClearReason != ProjectionClearReason.None))
+                    throw new System.ArgumentException("Authoritative mailbox clears require one explicit clear reason.");
+                var sessionEpoch = authoritativeState.SessionEpoch ?? string.Empty;
+                var sameSession = authoritativeState.SessionGeneration == _lastGeneration &&
+                                  string.Equals(sessionEpoch, _lastSessionEpoch, System.StringComparison.Ordinal);
+                if (sameSession &&
+                    (authoritativeState.DemandEpoch < _lastDemandEpoch ||
+                     authoritativeState.DemandEpoch == _lastDemandEpoch &&
+                     authoritativeState.Revision < _lastPresentationRevision)) return;
 
-                PublishCoreValues(
-                    authoritativeState.SessionEpoch,
+                var meaningfulCommit = !sameSession ||
+                    authoritativeState.DemandEpoch != _lastDemandEpoch ||
+                    authoritativeState.Revision != _lastPresentationRevision;
+                _lastSessionEpoch = sessionEpoch;
+                _lastGeneration = authoritativeState.SessionGeneration;
+                _lastDemandEpoch = authoritativeState.DemandEpoch;
+                _lastPresentationRevision = authoritativeState.Revision;
+                var authoritativeClear = authoritativeState.IsAuthoritativeClear &&
+                                         !authoritativeState.IsUsable;
+                meaningfulCommit |= authoritativeState.IsUsable != _lastMailboxUsable ||
+                                    authoritativeClear != _lastMailboxAuthoritativeClear ||
+                                    authoritativeState.Status != _lastMailboxStatus;
+                _mailbox.Publish(new ProjectionSample(
+                    sessionEpoch,
                     authoritativeState.SessionGeneration,
                     authoritativeState.DemandEpoch,
-                    authoritativeState.Revision,
+                    new AcquisitionSequence(++_acquisitionSequence),
+                    new ProjectionPresentationRevision(authoritativeState.Revision),
                     authoritativeState.GameFrame.HasValue,
                     authoritativeState.GameFrame.GetValueOrDefault(),
-                    authoritativeState.ViewportMapX,
-                    authoritativeState.ViewportMapY,
+                    Stopwatch.GetTimestamp(),
+                    authoritativeState.IsUsable ? authoritativeState.ViewportMapX : 0,
+                    authoritativeState.IsUsable ? authoritativeState.ViewportMapY : 0,
                     authoritativeState.Status,
                     authoritativeState.IsUsable,
-                    authoritativeState.IsAuthoritativeClear,
-                    authoritativeState.ClearReason);
+                    authoritativeClear,
+                    authoritativeClear ? authoritativeState.ClearReason : ProjectionClearReason.None));
+                _lastMailboxUsable = authoritativeState.IsUsable;
+                _lastMailboxAuthoritativeClear = authoritativeClear;
+                _lastMailboxStatus = authoritativeState.Status;
+                if (meaningfulCommit) commitSink = _presentationCommitSink;
             }
         }
 
@@ -79,73 +104,6 @@ namespace Malco.Data
             {
                 Volatile.Write(ref _closing, 1);
                 _presentationCommitSink = null;
-            }
-        }
-
-        private void PublishCoreValues(
-            string sessionEpoch,
-            long generation,
-            long demandEpoch,
-            long revision,
-            bool hasGameFrame,
-            int gameFrame,
-            int viewportMapX,
-            int viewportMapY,
-            ProviderStatus status,
-            bool usable,
-            bool isAuthoritativeClear,
-            ProjectionClearReason clearReason)
-        {
-            if (isAuthoritativeClear != (clearReason != ProjectionClearReason.None))
-                throw new System.ArgumentException("Authoritative mailbox clears require one explicit clear reason.");
-            var normalizedEpoch = sessionEpoch ?? string.Empty;
-            var sameSession = generation == _lastGeneration &&
-                              string.Equals(normalizedEpoch, _lastSessionEpoch, System.StringComparison.Ordinal);
-            if (sameSession &&
-                (demandEpoch < _lastDemandEpoch ||
-                 demandEpoch == _lastDemandEpoch && revision < _lastPresentationRevision))
-            {
-                return;
-            }
-
-            var identityChanged = !sameSession ||
-                                  demandEpoch != _lastDemandEpoch ||
-                                  generation != _lastGeneration ||
-                                  revision != _lastPresentationRevision;
-
-            _lastSessionEpoch = normalizedEpoch;
-            _lastGeneration = generation;
-            _lastDemandEpoch = demandEpoch;
-            _lastPresentationRevision = revision;
-            var acquisition = ++_acquisitionSequence;
-            var authoritativeClear = isAuthoritativeClear && !usable;
-            var sample = new ProjectionSample(
-                normalizedEpoch,
-                generation,
-                demandEpoch,
-                new AcquisitionSequence(acquisition),
-                new ProjectionPresentationRevision(revision),
-                hasGameFrame,
-                gameFrame,
-                Stopwatch.GetTimestamp(),
-                usable ? viewportMapX : 0,
-                usable ? viewportMapY : 0,
-                status,
-                usable,
-                authoritativeClear,
-                authoritativeClear ? clearReason : ProjectionClearReason.None);
-            var meaningfulCommit = identityChanged ||
-                                   usable != _lastMailboxUsable ||
-                                   authoritativeClear != _lastMailboxAuthoritativeClear ||
-                                   status != _lastMailboxStatus;
-            _mailbox.Publish(sample);
-            _lastMailboxUsable = usable;
-            _lastMailboxAuthoritativeClear = authoritativeClear;
-            _lastMailboxStatus = status;
-            if (meaningfulCommit)
-            {
-                var sink = _presentationCommitSink;
-                if (sink != null) sink.MarkProjectionPresentationCommitted();
             }
         }
 

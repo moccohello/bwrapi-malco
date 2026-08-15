@@ -12,7 +12,6 @@ namespace Malco.Presentation
         bool EditorMode { get; }
         HudDisplayPreferences DisplayPreferences { get; }
         bool IsFeatureEnabled(string key);
-        bool HasWidgetGameplayContent(string key);
         void SetWidgetGameplayContent(string key, bool content);
         void UpdateSettingsButtonStatus(string message, FrozenSemanticSnapshot snapshot);
         void RecordSpatialResult(SpatialSlowApplyResult result);

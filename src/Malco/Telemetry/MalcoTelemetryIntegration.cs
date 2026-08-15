@@ -26,8 +26,6 @@ namespace Malco.Integration.Telemetry
             _settingsSnapshot = settingsSnapshot;
         }
 
-        public bool Available => _client != null;
-
         public void MarkOverlayStateCommitted(OverlayReadModel state)
         {
             if (_client == null || _disposed) return;
@@ -51,27 +49,36 @@ namespace Malco.Integration.Telemetry
             var tuple = sessionEpoch.Length.ToString(CultureInfo.InvariantCulture) + ":" +
                         sessionEpoch + ":" +
                         semantic.SessionGeneration.ToString(CultureInfo.InvariantCulture);
+            var settings = _settingsSnapshot?.Invoke();
+            if (settings == null) return;
+            var telemetrySettings = new TelemetryGameSettings(
+                settings.Language,
+                settings.Widgets.Count(entry => entry.Value.Enabled),
+                settings.ItemSettings.Count(entry => entry.Value.Show),
+                settings.ItemSettings.Count(entry => entry.Value.AvailableAlert),
+                settings.ItemSettings.Count(entry => entry.Value.CompletionAlert),
+                settings.CompletionDisplayMode,
+                settings.CompletionCountdownSeconds,
+                settings.AbilityDisplayModes.Count,
+                settings.ShowTransportCargo);
             lock (_sessionSync)
             {
                 if (_observedSessionTuples.Contains(tuple)) return;
                 _observedSessionTuples.Add(tuple);
             }
 
-            var settings = _settingsSnapshot?.Invoke();
-            if (settings == null) return;
-            _client.TrackGameStarted(
-                Guid.NewGuid().ToString("D"),
-                race,
-                new TelemetryGameSettings(
-                    settings.Language,
-                    settings.Widgets.Count(entry => entry.Value.Enabled),
-                    settings.ItemSettings.Count(entry => entry.Value.Show),
-                    settings.ItemSettings.Count(entry => entry.Value.AvailableAlert),
-                    settings.ItemSettings.Count(entry => entry.Value.CompletionAlert),
-                    settings.CompletionDisplayMode,
-                    settings.CompletionCountdownSeconds,
-                    settings.AbilityDisplayModes.Count,
-                    settings.ShowTransportCargo));
+            try
+            {
+                _client.TrackGameStarted(
+                    Guid.NewGuid().ToString("D"),
+                    race,
+                    telemetrySettings);
+            }
+            catch
+            {
+                lock (_sessionSync) _observedSessionTuples.Remove(tuple);
+                throw;
+            }
         }
 
         private static string NormalizeRace(Race race)

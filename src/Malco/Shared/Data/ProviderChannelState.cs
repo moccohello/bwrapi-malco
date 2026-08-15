@@ -80,6 +80,10 @@ namespace Malco.Data
             while (true)
             {
                 var current = Volatile.Read(ref location) ?? ProviderChannelState.Empty(semantic.Message);
+                if (ReferenceEquals(current.Semantic, semantic))
+                {
+                    return current;
+                }
                 var sessionChanged = current.Semantic == null ||
                                      current.Semantic.SessionGeneration != semantic.SessionGeneration ||
                                      !string.Equals(

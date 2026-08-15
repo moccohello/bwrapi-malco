@@ -10,6 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco.Launcher", "src\Malco
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco.Telemetry", "src\Malco.Telemetry\Malco.Telemetry.csproj", "{C72E46A2-6046-471F-91FB-1F739A72E3D6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{644E14EC-561B-4CBA-BE42-DCC59C9C2507}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Malco.ContractTests", "tests\Malco.ContractTests\Malco.ContractTests.csproj", "{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +32,10 @@ Global
 		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Debug|Any CPU.Build.0 = Debug|x64
 		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Release|Any CPU.ActiveCfg = Release|x64
 		{C72E46A2-6046-471F-91FB-1F739A72E3D6}.Release|Any CPU.Build.0 = Release|x64
+		{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4}.Debug|Any CPU.Build.0 = Debug|x64
+		{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4}.Release|Any CPU.ActiveCfg = Release|x64
+		{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +44,7 @@ Global
 		{6D7C7440-8DC8-42B3-B57D-7A0FBFF73AA2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A6428F2D-C1CB-4B07-9080-3D7A1CD5BE8A} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{C72E46A2-6046-471F-91FB-1F739A72E3D6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{D4E6205B-F27A-4E48-A7AB-9CEAE37D46C4} = {644E14EC-561B-4CBA-BE42-DCC59C9C2507}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F57C3F03-8C98-4F19-A801-B56B139F39C5}

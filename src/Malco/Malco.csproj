@@ -5,7 +5,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Malco</RootNamespace>
     <AssemblyName>Malco</AssemblyName>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
@@ -38,6 +38,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Malco.Telemetry\Malco.Telemetry.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Malco.ContractTests" />
   </ItemGroup>
 
 </Project>

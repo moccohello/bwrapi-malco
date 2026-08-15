@@ -2,23 +2,16 @@ using Malco.Game.Services;
 
 namespace Malco.Shell.Shutdown
 {
-    internal enum OverlayShutdownStatus
-    {
-        Complete,
-        Blocked
-    }
-
     internal readonly struct OverlayShutdownResult
     {
-        public OverlayShutdownResult(OverlayShutdownStatus status, string message)
+        public OverlayShutdownResult(bool isComplete, string message)
         {
-            Status = status;
+            IsComplete = isComplete;
             Message = message ?? string.Empty;
         }
 
-        public OverlayShutdownStatus Status { get; }
+        public bool IsComplete { get; }
         public string Message { get; }
-        public bool IsComplete => Status == OverlayShutdownStatus.Complete;
     }
 
     internal sealed class OverlayShutdownController
@@ -27,7 +20,7 @@ namespace Malco.Shell.Shutdown
         {
             if (coordinator == null)
             {
-                return new OverlayShutdownResult(OverlayShutdownStatus.Complete, string.Empty);
+                return new OverlayShutdownResult(true, string.Empty);
             }
 
             coordinator.Dispose();
@@ -35,13 +28,13 @@ namespace Malco.Shell.Shutdown
             {
                 var detail = coordinator.ShutdownFailureMessage;
                 return new OverlayShutdownResult(
-                    OverlayShutdownStatus.Blocked,
+                    false,
                     string.IsNullOrWhiteSpace(detail)
                         ? "Application/provider shutdown is blocked. Choose Retry Quit from the tray."
                         : detail + " Choose Retry Quit from the tray.");
             }
 
-            return new OverlayShutdownResult(OverlayShutdownStatus.Complete, string.Empty);
+            return new OverlayShutdownResult(true, string.Empty);
         }
     }
 }

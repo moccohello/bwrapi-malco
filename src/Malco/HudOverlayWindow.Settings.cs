@@ -7,6 +7,7 @@ using Malco.Configuration.Models;
 using Malco.Data;
 using Malco.Localization;
 using Malco.Models;
+using Malco.Presentation.Hud.Units;
 using Malco.Settings.Contracts;
 using Malco.Settings.Controller;
 using Malco.Settings.Views;
@@ -78,12 +79,6 @@ namespace Malco
                left.Value.FlushedRevision == right.FlushedRevision &&
                left.Value.AttemptedRevision == right.AttemptedRevision &&
                string.Equals(left.Value.Message, right.Message, StringComparison.Ordinal);
-
-        private void UpdateChannelDemand(FrozenSemanticSnapshot snapshot, bool rally, bool commands)
-            => _sceneViewController.UpdateChannelDemand(snapshot, rally, commands);
-
-        private void UpdatePresentationClockArming()
-            => _sceneViewController.UpdatePresentationClockArming();
 
         internal OverlayRuntimeMode ResolveRuntimeMode(FrozenSemanticSnapshot snapshot)
         {
@@ -172,12 +167,12 @@ namespace Malco
             var result = _settingsPersistence.ApplyEdit(edit);
             if (result.Changed)
             {
+                var layout = _settingsController.Capture().Snapshot;
                 if (edit.Kind == SettingsEditKind.SetLanguage)
                 {
-                    RefreshLocalizedUi(_settingsController.Layout.Language);
+                    RefreshLocalizedUi(layout.Language);
                 }
-                _hudDisplayPreferences = HudDisplayPreferences.FromLayout(
-                    _settingsController.Capture().Snapshot.ToMutable());
+                _hudDisplayPreferences = HudDisplayPreferences.FromLayout(layout.ToMutable());
                 if (edit.Kind == SettingsEditKind.SetIconSize)
                 {
                     RefreshLayoutSamples();
@@ -236,19 +231,24 @@ namespace Malco
 
         private void RefreshPresenterViews()
         {
+            var snapshot = _sceneViewController.LatestSnapshot;
+            var generation = _scenePresenter.SessionGeneration;
             SetWidgetGameplayContent(
                 HudWidgetRegistry.Workers,
                 _workersPresenter.ApplyWorkers(
-                    _sceneViewController.LatestSnapshot,
-                    _scenePresenter.SessionGeneration,
+                    snapshot,
+                    generation,
                     _hudDisplayPreferences));
             _unitsPresenter.Invalidate();
             _buildingsPresenter.Invalidate();
             _upgradesPresenter.InvalidateVisuals();
-            ApplyUnitAndBuildingPresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
-            ApplyUpgradePresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
-            ApplyAvailableUpgradePresenter();
-            ApplyCompletedUpgradePresenters();
+            var unitInput = new UnitHudPresentationInput(snapshot, generation, _hudDisplayPreferences, _editorMode);
+            SetWidgetGameplayContent(HudWidgetRegistry.Units, _unitsPresenter.Apply(unitInput));
+            SetWidgetGameplayContent(HudWidgetRegistry.Buildings, _buildingsPresenter.Apply(unitInput));
+            var upgrades = _upgradesPresenter.ApplySlowState(BuildUpgradePresentationInput(snapshot, generation));
+            SetWidgetGameplayContent(HudWidgetRegistry.Upgrades, upgrades.Completed);
+            SetWidgetGameplayContent(HudWidgetRegistry.UpgradeCompletionWarnings, upgrades.Warnings);
+            SetWidgetGameplayContent(HudWidgetRegistry.AvailableUpgrades, upgrades.Available);
         }
 
         private void ApplyInitialLayoutLoadStatus()
@@ -281,7 +281,7 @@ namespace Malco
                 {
                     _layoutLoadResult = new LayoutLoadResult(
                         LayoutLoadStatus.Loaded,
-                        _settingsController.Layout,
+                        _settingsController.Capture().Snapshot.ToMutable(),
                         false,
                         string.Empty);
                 }

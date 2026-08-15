@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Malco.Application.Contracts.Projection;
 using Malco.Models;
 
 namespace Malco.Data
@@ -11,10 +12,20 @@ namespace Malco.Data
             ProviderStatus status = ProviderStatus.Error)
         {
             if (IsClosing) return;
+            IProviderCommitSink commitSink = null;
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
                 var current = Volatile.Read(ref _channels).Semantic;
+                var normalizedMessage = message ?? string.Empty;
+                if (current.Status == status &&
+                    string.Equals(
+                        current.Message,
+                        normalizedMessage,
+                        StringComparison.Ordinal))
+                {
+                    return;
+                }
                 var snapshot = current.Snapshot;
                 var semantic = current.WithStatus(
                     status,
@@ -26,8 +37,9 @@ namespace Malco.Data
                     ref _channels,
                     semantic);
                 _metrics.RecordSemanticCommit();
-                _commitSink?.MarkProviderCommit(ProviderCommitMask.Semantic);
+                commitSink = _commitSink;
             }
+            commitSink?.MarkProviderCommit(ProviderCommitMask.Semantic);
         }
 
         public void PublishViewportFailure(
@@ -36,6 +48,16 @@ namespace Malco.Data
         {
             if (IsClosing) return;
             var state = Volatile.Read(ref _channels);
+            if (!state.Viewport.IsUsable &&
+                !state.Viewport.IsAuthoritativeClear &&
+                state.Viewport.Status == status &&
+                string.Equals(
+                    state.Viewport.Message,
+                    message ?? string.Empty,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
             var failure = ViewportProjectionState.Unavailable(
                 message,
                 state.Semantic.SessionGeneration,
@@ -51,6 +73,14 @@ namespace Malco.Data
             if (IsClosing) return;
             var state = Volatile.Read(ref _channels);
             var current = state.Commands;
+            if (current.Status == CommandObservationStatus.Error &&
+                string.Equals(
+                    current.Message,
+                    message ?? string.Empty,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
             var retainsContent =
                 current.IsCoherent || current.RetainsPreviousContent;
             var failure = new CommandProjectionState(
@@ -76,6 +106,8 @@ namespace Malco.Data
         public void PublishFatalFailure(string message)
         {
             if (IsClosing) return;
+            IProviderCommitSink commitSink = null;
+            IProjectionPresentationCommitSink presentationCommitSink = null;
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
@@ -85,7 +117,6 @@ namespace Malco.Data
                 var sessionEpoch = currentSemantic.SessionEpoch;
                 var generation = currentSemantic.SessionGeneration;
                 GameSnapshot snapshot = GameSnapshotFactory.NotReady(message);
-                snapshot = snapshot.WithWorkerStateStatus(message);
                 _snapshotMapper.ResetSessionState();
                 var semantic = new SemanticSnapshotState(
                     ProviderStatus.Error,
@@ -125,13 +156,17 @@ namespace Malco.Data
                     viewport,
                     DateTime.UtcNow);
                 Volatile.Write(ref _channels, next);
+                _projectionMailbox.Commit(
+                    next.Viewport,
+                    out presentationCommitSink);
                 _metrics.RecordFatalCommits();
-                _projectionMailbox.Publish(next.Viewport);
-                _commitSink?.MarkProviderCommit(
-                    ProviderCommitMask.Semantic |
-                    ProviderCommitMask.Commands |
-                    ProviderCommitMask.ProjectionControl);
+                commitSink = _commitSink;
             }
+            presentationCommitSink?.MarkProjectionPresentationCommitted();
+            commitSink?.MarkProviderCommit(
+                ProviderCommitMask.Semantic |
+                ProviderCommitMask.Commands |
+                ProviderCommitMask.ProjectionControl);
         }
     }
 }

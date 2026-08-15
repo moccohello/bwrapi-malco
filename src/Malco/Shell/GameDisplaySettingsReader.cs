@@ -37,7 +37,7 @@ namespace Malco.Shell
                 };
                 _watcher.Changed += OnChanged;
                 _watcher.Created += OnChanged;
-                _watcher.Renamed += OnRenamed;
+                _watcher.Renamed += OnChanged;
             }
             QueueRead(TimeSpan.Zero);
         }
@@ -45,8 +45,6 @@ namespace Malco.Shell
         public bool OriginalAspectRatio => Volatile.Read(ref _originalAspectRatio) != 0;
 
         private void OnChanged(object sender, FileSystemEventArgs args) => QueueRead(Debounce);
-        private void OnRenamed(object sender, RenamedEventArgs args) => QueueRead(Debounce);
-
         private void QueueRead(TimeSpan dueTime)
         {
             if (Volatile.Read(ref _disposed) != 0) return;
@@ -80,8 +78,7 @@ namespace Malco.Shell
                 var previous = Interlocked.Exchange(ref _originalAspectRatio, next);
                 if (previous != next && Volatile.Read(ref _disposed) == 0) _changed();
             }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException) { }
             finally
             {
                 Interlocked.Exchange(ref _readQueued, 0);
@@ -103,7 +100,7 @@ namespace Malco.Shell
                 _watcher.EnableRaisingEvents = false;
                 _watcher.Changed -= OnChanged;
                 _watcher.Created -= OnChanged;
-                _watcher.Renamed -= OnRenamed;
+                _watcher.Renamed -= OnChanged;
                 _watcher.Dispose();
             }
         }

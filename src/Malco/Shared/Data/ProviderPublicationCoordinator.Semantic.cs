@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using BwrApi.Client;
+using Malco.Application.Contracts.Projection;
 using Malco.Models;
 
 namespace Malco.Data
@@ -13,6 +14,9 @@ namespace Malco.Data
             BwrApiSemanticSnapshotV1 source)
         {
             if (IsClosing) return;
+            IProviderCommitSink commitSink = null;
+            IProjectionPresentationCommitSink presentationCommitSink = null;
+            ProviderCommitMask commitMask = ProviderCommitMask.None;
             var sessionEpoch = source.SessionEpoch ?? string.Empty;
             if (!string.Equals(
                     header.SessionEpoch ?? string.Empty,
@@ -52,12 +56,11 @@ namespace Malco.Data
 
                 BwrApiRuntimeSnapshot runtime =
                     _semanticRuntimeMapper.Map(header, source);
-                GameSnapshot snapshot =
-                    _snapshotMapper.BuildSemanticSnapshot(runtime);
                 ProviderStatus status =
                     ResolveSemanticStatus(header, source, runtime);
                 string message = BuildSemanticMessage(source, status);
-                snapshot = snapshot.WithWorkerStateStatus(message);
+                GameSnapshot snapshot =
+                    _snapshotMapper.BuildSemanticSnapshot(runtime, message);
                 var semantic = new SemanticSnapshotState(
                     status,
                     snapshot,
@@ -87,18 +90,22 @@ namespace Malco.Data
                     !ReferenceEquals(before.Viewport, after.Viewport);
                 if (projectionChannelsReset)
                 {
-                    _projectionMailbox.Publish(after.Viewport);
+                    _projectionMailbox.Commit(
+                        after.Viewport,
+                        out presentationCommitSink);
                     _metrics.RecordProjectionChannelResetCommits();
                 }
 
                 _metrics.RecordSemanticCommit();
-                _commitSink?.MarkProviderCommit(
-                    projectionChannelsReset
-                        ? ProviderCommitMask.Semantic |
-                          ProviderCommitMask.Commands |
-                          ProviderCommitMask.ProjectionControl
-                        : ProviderCommitMask.Semantic);
+                commitSink = _commitSink;
+                commitMask = projectionChannelsReset
+                    ? ProviderCommitMask.Semantic |
+                      ProviderCommitMask.Commands |
+                      ProviderCommitMask.ProjectionControl
+                    : ProviderCommitMask.Semantic;
             }
+            presentationCommitSink?.MarkProjectionPresentationCommitted();
+            commitSink?.MarkProviderCommit(commitMask);
         }
 
         private void ResetSemanticSessionState()

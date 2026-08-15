@@ -64,7 +64,6 @@ namespace Malco.Presentation.Hud.Upgrades
                     MalcoPreferenceValues.IconTileWidth(iconSize),
                     MalcoPreferenceValues.IconTileGap(iconSize));
                 foreach (var state in states) View.Tiles.Children.Add(_tiles.BuildCompleted(state, metrics));
-                ApplyVisibility(states.Count, input.EditorMode);
             }
             return states.Count > 0;
         }

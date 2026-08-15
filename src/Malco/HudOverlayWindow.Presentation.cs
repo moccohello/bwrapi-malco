@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Windows;
 using Malco.Application.Projection;
 using Malco.Data;
-using Malco.Presentation.Hud.Units;
 using Malco.Presentation.Hud.Upgrades;
 using Malco.Presentation.Spatial;
 using Malco.Settings.Contracts;
@@ -13,11 +12,6 @@ namespace Malco
 {
     internal sealed partial class HudOverlayWindow
     {
-        private void OnPresentationClock(object sender, EventArgs args)
-        {
-            _presentationScheduler.MarkClock();
-        }
-
         internal void SetWidgetGameplayContent(string key, bool hasContent)
         {
             _hudVisualTree.SetGameplayContentAvailable(
@@ -31,35 +25,8 @@ namespace Malco
             return _hudVisualTree.HasGameplayContent(key);
         }
 
-        internal void ApplyUnitAndBuildingPresenters(FrozenSemanticSnapshot snapshot, long sessionGeneration)
-        {
-            var input = new UnitHudPresentationInput(
-                snapshot,
-                sessionGeneration,
-                _hudDisplayPreferences,
-                _editorMode);
-            SetWidgetGameplayContent(HudWidgetRegistry.Units, _unitsPresenter.Apply(input));
-            SetWidgetGameplayContent(HudWidgetRegistry.Buildings, _buildingsPresenter.Apply(input));
-        }
-
         private UpgradePresentationInput BuildUpgradePresentationInput(FrozenSemanticSnapshot snapshot, long sessionGeneration) =>
             new UpgradePresentationInput(snapshot, sessionGeneration, _hudDisplayPreferences, _editorMode);
-
-        internal void ApplyUpgradePresenters(FrozenSemanticSnapshot snapshot, long sessionGeneration)
-        {
-            var availability = _upgradesPresenter.ApplySlowState(BuildUpgradePresentationInput(snapshot, sessionGeneration));
-            SetWidgetGameplayContent(HudWidgetRegistry.Upgrades, availability.Completed);
-            SetWidgetGameplayContent(HudWidgetRegistry.UpgradeCompletionWarnings, availability.Warnings);
-            SetWidgetGameplayContent(HudWidgetRegistry.AvailableUpgrades, availability.Available);
-        }
-
-        internal void ApplyCompletedUpgradePresenters()
-        {
-            var availability = _upgradesPresenter.ApplyCompletedAndWarnings(
-                BuildUpgradePresentationInput(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration));
-            SetWidgetGameplayContent(HudWidgetRegistry.Upgrades, availability.Completed);
-            SetWidgetGameplayContent(HudWidgetRegistry.UpgradeCompletionWarnings, availability.Warnings);
-        }
 
         internal void ApplyAvailableUpgradePresenter()
         {
@@ -155,7 +122,7 @@ namespace Malco
             var showMineralWorkers = IsFeatureEnabled(HudWidgetRegistry.MineralWorkers);
             var showGasWorkers = IsFeatureEnabled(HudWidgetRegistry.GasWorkers);
             var commandsWereDemanded = _sceneViewController.CommandsDemanded;
-            UpdateChannelDemand(_sceneViewController.LatestSnapshot, showBuildingRallyLines, showUnitCommandLines);
+            _sceneViewController.UpdateChannelDemand(showBuildingRallyLines, showUnitCommandLines);
             var commands = !commandsWereDemanded && _sceneViewController.CommandsDemanded
                 ? CommandProjectionState.Unavailable(
                     _scenePresenter.SessionGeneration,

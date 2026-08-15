@@ -30,7 +30,7 @@ namespace Malco.Settings.Views
             var copy = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             copy.Children.Add(_palette.Text(UiText.Get("Language"), 14d, FontWeights.SemiBold, _palette.TextBrush));
             row.Children.Add(copy);
-            var current = MalcoPreferenceValues.NormalizeLanguage(_actions.Layout.Language);
+            var current = MalcoPreferenceValues.NormalizeLanguage(_actions.LayoutSnapshot.Language);
             var language = new StackPanel { Orientation = Orientation.Horizontal };
             var english = SegmentButton("English", string.Equals(current, MalcoPreferenceValues.English, StringComparison.Ordinal), "settings-language");
             english.Click += (sender, args) =>
@@ -259,7 +259,6 @@ namespace Malco.Settings.Views
 
         private void OpenLayout(string key)
         {
-            _actions.SelectedWidgetKey = key;
             _actions.SelectWidget(key);
             _actions.ActiveEditorPage = SettingsPage.Layout;
             _actions.UpdateEditorPlacement();

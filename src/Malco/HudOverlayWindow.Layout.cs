@@ -112,6 +112,8 @@ namespace Malco
                 return;
             }
 
+            widget.ReplaceLayout(_settingsController.CaptureWidgetLayout(key));
+
             if (enabled && string.Equals(
                     key,
                     HudWidgetRegistry.AvailableUpgrades,
@@ -141,12 +143,11 @@ namespace Malco
             {
                 return;
             }
+            foreach (var widget in _widgets.Values)
+            {
+                widget.ReplaceLayout(_settingsController.CaptureWidgetLayout(widget.Key));
+            }
             ClampWidgets();
-            _unitsPresenter.Invalidate();
-            _buildingsPresenter.Invalidate();
-            _upgradesPresenter.InvalidateVisuals();
-            ApplyUnitAndBuildingPresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
-            ApplyUpgradePresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
             ApplyWidgetEditorChrome();
             RefreshVisibility();
             _layoutEditorView.RefreshLayoutEditorState();
@@ -171,11 +172,6 @@ namespace Malco
                         layout.WidthRatio,
                         layout.HeightRatio)));
             }
-            _unitsPresenter.Invalidate();
-            _buildingsPresenter.Invalidate();
-            _upgradesPresenter.InvalidateVisuals();
-            ApplyUnitAndBuildingPresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
-            ApplyUpgradePresenters(_sceneViewController.LatestSnapshot, _scenePresenter.SessionGeneration);
             RefreshVisibility();
             if (_editorMode && _activeEditorPage == SettingsPage.Layout)
             {

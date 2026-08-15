@@ -49,25 +49,9 @@ namespace Malco
             }
         }
 
-        public static string UserDataDirectory
-        {
-            get { return Path.Combine(InstallDirectory, DataDirectoryName); }
-        }
+        public static string UserDataDirectory => Path.Combine(InstallDirectory, DataDirectoryName);
 
-        public static string InstalledRootMarkerPath
-        {
-            get { return Path.Combine(InstallDirectory, ".malco-install-root"); }
-        }
-
-        public static string UserLayoutPath
-        {
-            get { return Path.Combine(UserDataDirectory, "hud-layout.json"); }
-        }
-
-        public static void EnsureUserDataDirectory()
-        {
-            Directory.CreateDirectory(UserDataDirectory);
-        }
+        public static string UserLayoutPath => Path.Combine(UserDataDirectory, "hud-layout.json");
 
         private static void EnsureOrdinaryDirectory(DirectoryInfo directory, string label)
         {
@@ -108,11 +92,8 @@ namespace Malco
                     return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(actual, expected);
                 }
             }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception exception) when (
+                exception is IOException || exception is UnauthorizedAccessException)
             {
                 return false;
             }

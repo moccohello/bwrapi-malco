@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -33,7 +32,7 @@ namespace Malco
                 _pendingSettingsRevision = 0L;
                 _settingsStatusClock.Stop();
             }
-            UpdatePresentationClockArming();
+            _sceneViewController.UpdatePresentationClockArming();
             _spatialPresenter.InvalidateSurface();
             if (_framePump != null) _framePump.RequestFrame();
             if (enabled)
@@ -95,8 +94,8 @@ namespace Malco
 
             ApplyEditorMode(!_editorMode);
             _shellController.RefreshRuntimeMode();
-            _presentationScheduler.MarkOverlayStateCommitted(_coordinator.Latest);
-            UpdatePresentationClockArming();
+            _runtimeHost.MarkCurrentStateCommitted();
+            _sceneViewController.UpdatePresentationClockArming();
             if (_editorMode)
             {
                 Activate();
@@ -113,10 +112,24 @@ namespace Malco
         {
             ApplyEditorMode(true);
             _shellController.RefreshRuntimeMode();
-            _presentationScheduler.MarkOverlayStateCommitted(_coordinator.Latest);
+            _runtimeHost.MarkCurrentStateCommitted();
             Activate();
             Focus();
             FocusActiveEditorNavigation();
+        }
+
+        private void OpenEditorPage(SettingsPage page)
+        {
+            if (_editorMode)
+            {
+                Activate();
+                Focus();
+                _layoutEditorView.SelectEditorTab(page);
+                return;
+            }
+
+            _activeEditorPage = page;
+            OpenEditorMode();
         }
 
         internal void HandleSettingsIntent(SettingsIntent intent)
@@ -125,17 +138,14 @@ namespace Malco
             switch (intent.Kind)
             {
                 case SettingsIntentKind.OpenFeatures:
-                    _layoutEditorView.SelectEditorTab(SettingsPage.Features);
-                    OpenEditorMode();
+                    OpenEditorPage(SettingsPage.Features);
                     break;
                 case SettingsIntentKind.OpenLayout:
-                    _layoutEditorView.SelectEditorTab(SettingsPage.Layout);
-                    OpenEditorMode();
+                    OpenEditorPage(SettingsPage.Layout);
                     break;
                 case SettingsIntentKind.OpenTechTree:
                     _featureSettingsView.OpenFeature(HudWidgetRegistry.Upgrades);
-                    _layoutEditorView.SelectEditorTab(SettingsPage.Features);
-                    OpenEditorMode();
+                    OpenEditorPage(SettingsPage.Features);
                     break;
                 case SettingsIntentKind.ToggleEditor:
                     ToggleEditorMode();
@@ -160,9 +170,8 @@ namespace Malco
             ShutdownOverlay();
         }
 
-        bool ISettingsViewActions.EditorMode => _editorMode;
         SettingsPage ISettingsViewActions.ActiveEditorPage { get => _activeEditorPage; set => _activeEditorPage = value; }
-        string ISettingsViewActions.SelectedWidgetKey { get => _selectedWidgetKey; set => _selectedWidgetKey = value; }
+        string ISettingsViewActions.SelectedWidgetKey => _selectedWidgetKey;
         Race ISettingsViewActions.SelectedTechTreeRace
         {
             get => _selectedTechTreeRace;
@@ -179,7 +188,7 @@ namespace Malco
         }
         double ISettingsViewActions.ViewWidth => ActualWidth > 0d ? ActualWidth : Width;
         Dispatcher ISettingsViewActions.Dispatcher => Dispatcher;
-        HudLayoutConfig ISettingsViewActions.Layout => _settingsController.Layout;
+        HudLayoutSnapshot ISettingsViewActions.LayoutSnapshot => _settingsController.Capture().Snapshot;
         bool ISettingsViewActions.HudTemporarilyHidden => _hudTemporarilyHidden;
         string ISettingsViewActions.ProgramVersion => ProgramVersion;
         SettingsEditResult ISettingsViewActions.ApplyEdit(SettingsEdit edit) => ApplySettingsEdit(edit);
@@ -210,7 +219,6 @@ namespace Malco
         bool IOverlaySceneViewPort.EditorMode => _editorMode;
         HudDisplayPreferences IOverlaySceneViewPort.DisplayPreferences => _hudDisplayPreferences;
         bool IOverlaySceneViewPort.IsFeatureEnabled(string key) => IsFeatureEnabled(key);
-        bool IOverlaySceneViewPort.HasWidgetGameplayContent(string key) => HasWidgetGameplayContent(key);
         void IOverlaySceneViewPort.SetWidgetGameplayContent(string key, bool content) => SetWidgetGameplayContent(key, content);
         void IOverlaySceneViewPort.UpdateSettingsButtonStatus(string message, FrozenSemanticSnapshot snapshot) => UpdateSettingsButtonStatus(message, snapshot);
         void IOverlaySceneViewPort.RecordSpatialResult(SpatialSlowApplyResult result) => RecordSpatialResult(result);
@@ -231,17 +239,14 @@ namespace Malco
             if (_initialVisibilityComplete) Opacity = presented ? 1d : 0d;
         }
 
-        private void CompleteInitialOverlayVisibility()
+        void IOverlayShellViewPort.SetOverlayPresented(bool presented) =>
+            SetOverlayPresentation(presented);
+        void IOverlayShellViewPort.CompleteInitialVisibility()
         {
             if (_initialVisibilityComplete) return;
             _initialVisibilityComplete = true;
             Opacity = _overlayPresentationVisible ? 1d : 0d;
         }
-
-        void IOverlayShellViewPort.SetOverlayPresented(bool presented) =>
-            SetOverlayPresentation(presented);
-        void IOverlayShellViewPort.CompleteInitialVisibility() =>
-            CompleteInitialOverlayVisibility();
         void IOverlayShellViewPort.ApplyShellBounds(Rect bounds, bool clampWidgets)
         {
             Left = bounds.Left;
@@ -291,7 +296,7 @@ namespace Malco
             SetWidgetGameplayContent(HudWidgetRegistry.Workers, false);
             SetWidgetGameplayContent(HudWidgetRegistry.Units, false);
             SetWidgetGameplayContent(HudWidgetRegistry.Buildings, false);
-            _coordinator.ClearStableSnapshot(snapshot.WorkerStateStatus);
+            _runtimeHost.ClearStableSnapshot(snapshot.WorkerStateStatus);
             SetShellStatus(snapshot.WorkerStateStatus);
         }
 
@@ -342,15 +347,7 @@ namespace Malco
                 return widget.Layout.Enabled;
             }
 
-            var definition = HudWidgetRegistry.EditorFeatures().FirstOrDefault(candidate =>
-                string.Equals(candidate.Key, key, StringComparison.OrdinalIgnoreCase));
-            return _settingsController.Layout.GetOrCreate(
-                key,
-                definition != null ? definition.X : 0d,
-                definition != null ? definition.Y : 0d,
-                definition != null ? definition.Width : 1d,
-                definition != null ? definition.Height : 1d,
-                definition == null || definition.EnabledByDefault).Enabled;
+            return _settingsController.IsWidgetEnabled(key);
         }
     }
 }

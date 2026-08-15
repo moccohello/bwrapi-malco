@@ -53,7 +53,8 @@ namespace Malco.Telemetry
                 !string.IsNullOrEmpty(serviceUri.Query) ||
                 !string.IsNullOrEmpty(serviceUri.Fragment))
                 throw new InvalidDataException("Telemetry service_base_uri must be the production HTTPS API origin.");
-            RequireExactPath(EventBatchPath, "/api/v1/events/batch", nameof(EventBatchPath));
+            if (!string.Equals(EventBatchPath, "/api/v1/events/batch", StringComparison.Ordinal))
+                throw new InvalidDataException("EventBatchPath does not match the production API contract.");
             RequireFileName(InstallationIdFileName, nameof(InstallationIdFileName));
             RequireFileName(QueueFileName, nameof(QueueFileName));
             if (string.IsNullOrWhiteSpace(QueueMutexName)) throw new InvalidDataException("queue_mutex_name is required.");
@@ -74,12 +75,6 @@ namespace Malco.Telemetry
             if (RequestTimeoutSeconds > 300) throw new InvalidDataException("request_timeout_seconds exceeds the safety ceiling.");
             if (RetryMaxSeconds > 86400) throw new InvalidDataException("Telemetry wait interval exceeds the safety ceiling.");
             if (MutexWaitMilliseconds > 60000) throw new InvalidDataException("mutex_wait_milliseconds exceeds the safety ceiling.");
-        }
-
-        private static void RequireExactPath(string value, string expected, string name)
-        {
-            if (!string.Equals(value, expected, StringComparison.Ordinal))
-                throw new InvalidDataException(name + " does not match the production API contract.");
         }
 
         private static void RequireFileName(string value, string name)

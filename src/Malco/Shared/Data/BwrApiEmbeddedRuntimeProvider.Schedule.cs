@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 
 namespace Malco.Data
@@ -19,14 +18,18 @@ namespace Malco.Data
             return now > long.MaxValue - delta ? long.MaxValue : now + delta;
         }
 
-        private static int ComputePollWaitMilliseconds(long now, params long[] deadlines)
+        private static int ComputePollWaitMilliseconds(
+            long now,
+            long firstDeadline,
+            long secondDeadline = long.MaxValue)
         {
-            long next = deadlines.Where(value => value != long.MaxValue).DefaultIfEmpty(long.MaxValue).Min();
-            if (next == long.MaxValue) return Timeout.Infinite;
-            long remaining = next - now;
+            var deadline = Math.Min(firstDeadline, secondDeadline);
+            if (deadline == long.MaxValue) return Timeout.Infinite;
+            long remaining = deadline - now;
             if (remaining <= 0) return 0;
             long milliseconds = (remaining * 1000L + Stopwatch.Frequency - 1L) / Stopwatch.Frequency;
             return (int)Math.Max(1L, Math.Min(50L, milliseconds));
         }
+
     }
 }

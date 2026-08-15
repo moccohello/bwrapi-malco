@@ -60,13 +60,7 @@ namespace Malco
             HudWidgetDefinition definition,
             UIElement body)
         {
-            var layout = _settingsController.Layout.GetOrCreate(
-                definition.Key,
-                definition.X,
-                definition.Y,
-                definition.Width,
-                definition.Height,
-                definition.EnabledByDefault);
+            var layout = _settingsController.CaptureWidgetLayout(definition.Key);
             var widget = new HudWidgetView(
                 definition.Key,
                 UiText.Get(definition.Title),
@@ -85,6 +79,7 @@ namespace Malco
         private UIElement BuildLayoutSample(string key)
         {
             var catalog = TechTreeCatalog.GetRaceCatalog(Race.Terran);
+            var layout = _settingsController.Capture().Snapshot;
             if (string.Equals(key, HudWidgetRegistry.Workers, StringComparison.OrdinalIgnoreCase))
             {
                 var workers = new StackPanel
@@ -121,18 +116,18 @@ namespace Malco
             if (string.Equals(key, HudWidgetRegistry.Units, StringComparison.OrdinalIgnoreCase))
             {
                 foreach (var item in TechTreeCatalog.GetDisplayUnits(catalog.Race))
-                    tiles.Children.Add(BuildLayoutSampleTile(item, "1", false, _settingsController.Layout.GetIconSize(key)));
+                    tiles.Children.Add(BuildLayoutSampleTile(item, "1", HudWidgetRegistry.GetIconSize(layout, key)));
             }
             else if (string.Equals(key, HudWidgetRegistry.Buildings, StringComparison.OrdinalIgnoreCase))
             {
                 foreach (var item in catalog.Branches.Select(branch => branch.Building))
-                    tiles.Children.Add(BuildLayoutSampleTile(item, "1", false, _settingsController.Layout.GetIconSize(key)));
+                    tiles.Children.Add(BuildLayoutSampleTile(item, "1", HudWidgetRegistry.GetIconSize(layout, key)));
             }
             else if (string.Equals(key, HudWidgetRegistry.AvailableUpgrades, StringComparison.OrdinalIgnoreCase))
             {
                 tiles.Margin = new Thickness(0d);
                 foreach (var item in LayoutSampleResearchItems(catalog))
-                    tiles.Children.Add(BuildLayoutSampleTile(item, string.Empty, false, _settingsController.Layout.GetIconSize(key), true));
+                    tiles.Children.Add(BuildLayoutSampleTile(item, string.Empty, HudWidgetRegistry.GetIconSize(layout, key), true));
             }
             else if (string.Equals(key, HudWidgetRegistry.Upgrades, StringComparison.OrdinalIgnoreCase))
             {
@@ -140,8 +135,7 @@ namespace Malco
                     tiles.Children.Add(BuildLayoutSampleTile(
                         item,
                         LayoutSampleUpgradeBadge(item),
-                        false,
-                        _settingsController.Layout.GetIconSize(key)));
+                        HudWidgetRegistry.GetIconSize(layout, key)));
             }
 
             return tiles;
@@ -229,7 +223,6 @@ namespace Malco
         private FrameworkElement BuildLayoutSampleTile(
             TechTreeItem item,
             string badge,
-            bool dimmed,
             string iconSize,
             bool availableUpgrade = false)
         {
@@ -241,7 +234,7 @@ namespace Malco
                 : _icons.GetUpgradeIcon(item.ToUpgradeState());
             if (!availableUpgrade)
             {
-                var previewName = UiText.Get(dimmed ? "Blocked preview" : "Preview") + ": " + UiText.GameName(item.Name);
+                var previewName = UiText.Get("Preview") + ": " + UiText.GameName(item.Name);
                 var tile = (FrameworkElement)_hudTileFactory.BuildImageTile(
                     image,
                     item.Name.Substring(0, 1).ToUpperInvariant(),
@@ -250,7 +243,6 @@ namespace Malco
                     TileMetrics.FromWidth(tileWidth, tileGap),
                     !isUnitOrBuilding,
                     isUnitOrBuilding ? HudTileBadgeStyle.Count : HudTileBadgeStyle.UpgradeLevel);
-                tile.Opacity = dimmed ? 0.38d : 1d;
                 AutomationProperties.SetName(tile, previewName + (string.IsNullOrEmpty(badge) ? string.Empty : " " + badge));
                 return tile;
             }
@@ -261,8 +253,7 @@ namespace Malco
                 Width = metrics.Width,
                 Height = metrics.FrameHeight,
                 Margin = new Thickness(0d, 0d, metrics.Gap, 0d),
-                Opacity = dimmed ? 0.35d : 1d,
-                ToolTip = UiText.Get(dimmed ? "Blocked preview" : "Preview") + ": " + UiText.GameName(item.Name)
+                ToolTip = UiText.Get("Preview") + ": " + UiText.GameName(item.Name)
             };
             var frame = new Border
             {
@@ -284,7 +275,7 @@ namespace Malco
             grid.Children.Add(frame);
             AutomationProperties.SetName(
                 grid,
-                UiText.Get(dimmed ? "Blocked preview" : "Preview") + ": " + UiText.GameName(item.Name) +
+                UiText.Get("Preview") + ": " + UiText.GameName(item.Name) +
                 (string.IsNullOrEmpty(badge) ? string.Empty : " " + badge));
             return grid;
         }
