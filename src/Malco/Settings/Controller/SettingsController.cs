@@ -45,8 +45,6 @@ namespace Malco.Settings.Controller
             _layout = initialLayout ?? throw new ArgumentNullException(nameof(initialLayout));
         }
 
-        public HudLayoutConfig Layout => _layout;
-
         public long EditRevision
         {
             get
@@ -102,6 +100,59 @@ namespace Malco.Settings.Controller
                 return new SettingsControllerCapture(
                     _editRevision,
                     HudLayoutSnapshot.FromLayout(_layout));
+            }
+        }
+
+        public WidgetLayout CaptureWidgetLayout(string key)
+        {
+            lock (_sync)
+            {
+                var definition = HudWidgetRegistry.Find(key);
+                if (definition == null)
+                {
+                    return null;
+                }
+
+                WidgetLayout stored;
+                var layout = _layout.Widgets != null &&
+                             _layout.Widgets.TryGetValue(definition.Key, out stored) &&
+                             stored != null
+                    ? new WidgetLayoutSnapshot(stored).ToMutable()
+                    : new WidgetLayout
+                    {
+                        Enabled = definition.EnabledByDefault,
+                        X = definition.X,
+                        Y = definition.Y,
+                        Width = definition.Width,
+                        Height = definition.Height
+                    };
+                layout.Normalize(
+                    definition.X,
+                    definition.Y,
+                    definition.Width,
+                    definition.Height,
+                    HudWidgetLayoutPolicy.MinimumWidth(definition.Key),
+                    HudWidgetLayoutPolicy.MinimumHeight(definition.Key));
+                return layout;
+            }
+        }
+
+        public bool IsWidgetEnabled(string key)
+        {
+            lock (_sync)
+            {
+                var definition = HudWidgetRegistry.Find(key);
+                if (definition == null)
+                {
+                    return false;
+                }
+
+                WidgetLayout layout;
+                return _layout.Widgets != null &&
+                       _layout.Widgets.TryGetValue(definition.Key, out layout) &&
+                       layout != null
+                    ? layout.Enabled
+                    : definition.EnabledByDefault;
             }
         }
 

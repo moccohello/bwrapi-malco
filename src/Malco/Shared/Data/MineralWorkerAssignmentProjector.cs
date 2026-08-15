@@ -16,7 +16,7 @@ namespace Malco.Data
             IList<BwrApiRuntimeUnit> localUnits,
             IList<BwrApiRuntimeUnit> allUnits,
             DateTime capturedAt,
-            GasWorkerAssignmentSnapshot gasAssignments)
+            ISet<StableIdentity> gasAssignments)
         {
             var mineralFields = allUnits
                 .Where(WorkerResourceSemantics.IsLiveMineralField)
@@ -77,7 +77,7 @@ namespace Malco.Data
                 observedWorkerKeys.Add(worker.SourceIdentity);
                 var isTrackedGasTransition =
                     WorkerOrderSemantics.IsGenericHarvest(worker.OrderId) &&
-                    gasAssignments.ContainsWorker(worker.SourceIdentity);
+                    gasAssignments.Contains(worker.SourceIdentity);
                 if (WorkerOrderSemantics.IsGas(worker.OrderId) ||
                     isTrackedGasTransition ||
                     !WorkerOrderSemantics.IsMineral(worker.OrderId))

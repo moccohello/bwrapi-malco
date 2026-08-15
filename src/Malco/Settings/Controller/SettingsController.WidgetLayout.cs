@@ -7,7 +7,7 @@ namespace Malco.Settings.Controller
     {
         private bool SetWidgetEnabled(string key, bool enabled)
         {
-            var definition = FindWidgetDefinition(key);
+            var definition = HudWidgetRegistry.Find(key);
             if (definition == null)
             {
                 return false;
@@ -42,24 +42,33 @@ namespace Malco.Settings.Controller
 
         private bool SetWidgetBounds(string key, WidgetBoundsValue bounds)
         {
-            var definition = FindWidgetDefinition(key);
+            var definition = HudWidgetRegistry.Find(key);
             if (definition == null)
             {
                 return false;
             }
 
-            WidgetLayout widget;
-            if (_layout.Widgets == null ||
-                !_layout.Widgets.TryGetValue(definition.Key, out widget) ||
-                widget == null)
+            WidgetLayout widget = null;
+            var hasStoredLayout = _layout.Widgets != null &&
+                                  _layout.Widgets.TryGetValue(definition.Key, out widget) &&
+                                  widget != null;
+            if (!hasStoredLayout)
             {
-                widget = _layout.GetOrCreate(
-                    definition.Key,
+                widget = new WidgetLayout
+                {
+                    Enabled = definition.EnabledByDefault,
+                    X = definition.X,
+                    Y = definition.Y,
+                    Width = definition.Width,
+                    Height = definition.Height
+                };
+                widget.Normalize(
                     definition.X,
                     definition.Y,
                     definition.Width,
                     definition.Height,
-                    definition.EnabledByDefault);
+                    HudWidgetLayoutPolicy.MinimumWidth(definition.Key),
+                    HudWidgetLayoutPolicy.MinimumHeight(definition.Key));
             }
 
             var minimumWidth = HudWidgetLayoutPolicy.MinimumWidth(definition.Key);
@@ -106,6 +115,17 @@ namespace Malco.Settings.Controller
                 return false;
             }
 
+            if (!hasStoredLayout)
+            {
+                widget = _layout.GetOrCreate(
+                    definition.Key,
+                    definition.X,
+                    definition.Y,
+                    definition.Width,
+                    definition.Height,
+                    definition.EnabledByDefault);
+            }
+
             widget.X = x;
             widget.Y = y;
             widget.Width = width;
@@ -118,22 +138,9 @@ namespace Malco.Settings.Controller
             return true;
         }
 
-        private static HudWidgetDefinition FindWidgetDefinition(string key)
-        {
-            foreach (var candidate in HudWidgetRegistry.EditorFeatures())
-            {
-                if (string.Equals(candidate.Key, key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
-
         private bool ResetWidgetBounds(string key)
         {
-            var definition = FindWidgetDefinition(key);
+            var definition = HudWidgetRegistry.Find(key);
             if (definition == null ||
                 HudWidgetRegistry.IsSpatialFeature(key))
             {

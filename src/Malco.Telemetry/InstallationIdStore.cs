@@ -20,7 +20,7 @@ namespace Malco.Telemetry
                 if (File.Exists(_path))
                 {
                     var existing = File.ReadAllText(_path, Encoding.UTF8).Trim();
-                    if (IsUuidV4(existing, out var id)) return id.ToString("D");
+                    if (TryNormalizeUuidV4(existing, out var canonical)) return canonical;
                 }
 
                 var created = Guid.NewGuid();
@@ -44,14 +44,15 @@ namespace Malco.Telemetry
             }
         }
 
-        private static bool IsUuidV4(string value, out Guid id)
+        internal static bool TryNormalizeUuidV4(string value, out string canonical)
         {
-            id = default;
+            canonical = null;
             if (!Guid.TryParseExact(value, "D", out var parsed)) return false;
-            var canonical = parsed.ToString("D");
-            var variant = canonical[19];
-            if (canonical[14] != '4' || variant != '8' && variant != '9' && variant != 'a' && variant != 'b') return false;
-            id = parsed;
+            var normalized = parsed.ToString("D");
+            var variant = normalized[19];
+            if (normalized[14] != '4' ||
+                variant != '8' && variant != '9' && variant != 'a' && variant != 'b') return false;
+            canonical = normalized;
             return true;
         }
 

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using Malco.Configuration.Models;
 
 namespace Malco
 {
@@ -96,6 +98,17 @@ namespace Malco
                    string.Equals(key, UnitCommandLines, System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(key, MineralWorkers, System.StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(key, GasWorkers, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static HudWidgetDefinition Find(string key) => EditorFeatures().FirstOrDefault(
+            feature => string.Equals(feature.Key, key, System.StringComparison.OrdinalIgnoreCase));
+
+        public static string GetIconSize(HudLayoutSnapshot layout, string key)
+        {
+            if (string.Equals(key, Units, System.StringComparison.OrdinalIgnoreCase)) return layout.UnitIconSize;
+            if (string.Equals(key, Buildings, System.StringComparison.OrdinalIgnoreCase)) return layout.BuildingIconSize;
+            if (string.Equals(key, Upgrades, System.StringComparison.OrdinalIgnoreCase)) return layout.CompletedUpgradeIconSize;
+            return layout.AvailableUpgradeIconSize;
         }
     }
 

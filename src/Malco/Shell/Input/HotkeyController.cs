@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Malco.Interop;
 
@@ -7,16 +6,13 @@ namespace Malco.Shell.Input
 {
     internal readonly struct HotkeyRegistrationResult
     {
-        public HotkeyRegistrationResult(bool isRegistered, int nativeErrorCode, string message)
+        public HotkeyRegistrationResult(bool isRegistered, string message)
         {
             IsRegistered = isRegistered;
-            NativeErrorCode = nativeErrorCode;
             Message = message ?? string.Empty;
         }
 
         public bool IsRegistered { get; }
-
-        public int NativeErrorCode { get; }
 
         public string Message { get; }
     }
@@ -69,7 +65,6 @@ namespace Malco.Shell.Input
                 ToggleEditorHotKeyId,
                 CtrlShiftModifiers,
                 F8VirtualKey);
-            var errorCode = registered ? 0 : Marshal.GetLastWin32Error();
             if (registered)
             {
                 _registeredWindow = windowHandle;
@@ -78,7 +73,6 @@ namespace Malco.Shell.Input
 
             _registrationResult = new HotkeyRegistrationResult(
                 registered,
-                errorCode,
                 registered ? string.Empty : RegistrationFailureMessage);
             return _registrationResult;
         }

@@ -217,6 +217,11 @@ namespace Malco.Settings.Views
         {
             Handle.SampleHost.Child = WrapScalableContent(Key, sampleBody);
         }
+
+        public void ReplaceLayout(WidgetLayout layout)
+        {
+            Layout = layout ?? throw new ArgumentNullException(nameof(layout));
+        }
     
         private Border BuildEditorChrome(string title)
         {

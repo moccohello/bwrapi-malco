@@ -85,32 +85,23 @@ namespace Malco.Configuration
         private static void NormalizeCurrentSchema(
             HudLayoutConfig layout)
         {
-            var normalizedLanguage = MalcoPreferenceValues.NormalizeLanguage(layout.Language);
-            layout.Language = normalizedLanguage;
-
-            var normalizedCompletionMode = MalcoPreferenceValues.NormalizeCompletionMode(layout.CompletionDisplayMode);
-            layout.CompletionDisplayMode = normalizedCompletionMode;
-            var normalizedCountdownSeconds =
+            layout.Language = MalcoPreferenceValues.NormalizeLanguage(layout.Language);
+            layout.CompletionDisplayMode = MalcoPreferenceValues.NormalizeCompletionMode(layout.CompletionDisplayMode);
+            layout.CompletionCountdownSeconds =
                 MalcoPreferenceValues.NormalizeCompletionCountdownSeconds(layout.CompletionCountdownSeconds);
-            layout.CompletionCountdownSeconds = normalizedCountdownSeconds;
-            var workerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(layout.WorkerCountStyle);
-            layout.WorkerCountStyle = workerCountStyle;
-            var unitIconSize = MalcoPreferenceValues.NormalizeIconSize(
+            layout.WorkerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(layout.WorkerCountStyle);
+            layout.UnitIconSize = MalcoPreferenceValues.NormalizeIconSize(
                 layout.UnitIconSize,
                 MalcoPreferenceValues.IconLarge);
-            layout.UnitIconSize = unitIconSize;
-            var buildingIconSize = MalcoPreferenceValues.NormalizeIconSize(
+            layout.BuildingIconSize = MalcoPreferenceValues.NormalizeIconSize(
                 layout.BuildingIconSize,
                 MalcoPreferenceValues.IconLarge);
-            layout.BuildingIconSize = buildingIconSize;
-            var completedUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(
+            layout.CompletedUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(
                 layout.CompletedUpgradeIconSize,
                 MalcoPreferenceValues.IconMedium);
-            layout.CompletedUpgradeIconSize = completedUpgradeIconSize;
-            var availableUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(
+            layout.AvailableUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(
                 layout.AvailableUpgradeIconSize,
                 MalcoPreferenceValues.IconSmall);
-            layout.AvailableUpgradeIconSize = availableUpgradeIconSize;
             if (layout.Widgets == null)
             {
                 layout.Widgets = new Dictionary<string, WidgetLayout>(StringComparer.OrdinalIgnoreCase);

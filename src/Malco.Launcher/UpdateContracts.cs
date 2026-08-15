@@ -72,8 +72,6 @@ namespace Malco.Launcher
         public long Sequence { get; }
         public string ManifestSha256 { get; }
 
-        public ReleaseReference Clone() => new ReleaseReference(Sequence, ManifestSha256);
-
         public bool SameAs(ReleaseReference other) =>
             other != null &&
             Sequence == other.Sequence &&

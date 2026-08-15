@@ -92,8 +92,6 @@ namespace Malco
             }
         }
 
-        public bool Enabled => _enabled;
-
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)

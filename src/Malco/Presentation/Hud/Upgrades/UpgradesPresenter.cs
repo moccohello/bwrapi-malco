@@ -33,15 +33,6 @@ namespace Malco.Presentation.Hud.Upgrades
             return new UpgradeContentAvailability(completed, warnings, available);
         }
 
-        public UpgradeContentAvailability ApplyCompletedAndWarnings(UpgradePresentationInput input)
-        {
-            EnsureSession(input.SessionGeneration);
-            IList<UpgradeState> allStates;
-            var completed = _completed.Apply(input, out allStates);
-            var warnings = _warnings.Apply(input, allStates);
-            return new UpgradeContentAvailability(completed, warnings, false);
-        }
-
         public bool ApplyAvailability(UpgradePresentationInput input)
         {
             EnsureSession(input.SessionGeneration);

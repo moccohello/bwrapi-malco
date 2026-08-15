@@ -131,7 +131,7 @@ namespace Malco.Presentation.Spatial
                 return new SpatialFrameApplyResult(false, 0, HudClipAction.Unchanged);
             }
 
-            if (frame.IsAuthoritativeClear || !frame.IsUsable ||
+            if (frame.IsAuthoritativeClear ||
                 frame.SessionGeneration != _sessionGeneration ||
                 !string.Equals(frame.SessionEpoch, _sessionEpoch, StringComparison.Ordinal))
             {
@@ -148,6 +148,12 @@ namespace Malco.Presentation.Spatial
                 var visibilityWrites = _tree.SetVisualsVisibility(Visibility.Collapsed);
                 StampFrame(frame);
                 return new SpatialFrameApplyResult(true, visibilityWrites, HudClipAction.Clear);
+            }
+
+            if (!frame.IsUsable)
+            {
+                _tree.SnapUnitOverlayMotions();
+                return new SpatialFrameApplyResult(true, 0, HudClipAction.Unchanged);
             }
 
             if (_positionedContentRevision == _contentRevision &&
@@ -174,11 +180,8 @@ namespace Malco.Presentation.Spatial
                 out projection,
                 out renderFrame))
             {
-                _tree.ClearClip();
                 _tree.SnapUnitOverlayMotions();
-                var visibilityWrites = _tree.SetVisualsVisibility(Visibility.Collapsed);
-                StampFrame(frame);
-                return new SpatialFrameApplyResult(true, visibilityWrites, HudClipAction.Clear);
+                return new SpatialFrameApplyResult(true, 0, HudClipAction.Unchanged);
             }
 
             _tree.UpdateClip(renderFrame.GameplayRect);

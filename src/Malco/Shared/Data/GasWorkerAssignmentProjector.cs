@@ -12,10 +12,11 @@ namespace Malco.Data
         private readonly WorkerResourceAssignmentTracker<StableIdentity> _assignments =
             new WorkerResourceAssignmentTracker<StableIdentity>();
 
-        public GasWorkerProjection Build(
+        public List<GasWorkerGroup> Build(
             IList<BwrApiRuntimeUnit> localUnits,
             IList<BwrApiRuntimeUnit> allUnits,
-            DateTime capturedAt)
+            DateTime capturedAt,
+            out HashSet<StableIdentity> assignedWorkerKeys)
         {
             var gasBuildingUnits = localUnits
                 .Where(unit =>
@@ -36,7 +37,8 @@ namespace Malco.Data
             if (gasBuildings.Count == 0)
             {
                 _assignments.Clear();
-                return CreateProjection(new List<GasWorkerGroup>());
+                assignedWorkerKeys = new HashSet<StableIdentity>();
+                return new List<GasWorkerGroup>();
             }
 
             var groups =
@@ -192,21 +194,14 @@ namespace Malco.Data
                 })
                 .OrderBy(group => group.GasIdentity)
                 .ToList();
-            return CreateProjection(result);
+            assignedWorkerKeys = new HashSet<StableIdentity>(
+                _assignments.SnapshotWorkerKeys());
+            return result;
         }
 
         public void ResetSessionState()
         {
             _assignments.Clear();
-        }
-
-        private GasWorkerProjection CreateProjection(
-            List<GasWorkerGroup> groups)
-        {
-            return new GasWorkerProjection(
-                groups,
-                new GasWorkerAssignmentSnapshot(
-                    _assignments.SnapshotWorkerKeys()));
         }
 
     }

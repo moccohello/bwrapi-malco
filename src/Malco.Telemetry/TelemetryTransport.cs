@@ -37,7 +37,14 @@ namespace Malco.Telemetry
                 InstallId = installId,
                 Events = events
             });
-            using var request = CreateJsonPost(_policy.EventBatchUri, body);
+            using var request = new HttpRequestMessage(HttpMethod.Post, _policy.EventBatchUri)
+            {
+                Content = new ByteArrayContent(body)
+            };
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json")
+            {
+                CharSet = "utf-8"
+            };
             using var response = await _http.SendAsync(
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
@@ -52,19 +59,6 @@ namespace Malco.Telemetry
             if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 return TelemetrySendResult.PermanentFailure;
             return TelemetrySendResult.Retry;
-        }
-
-        private static HttpRequestMessage CreateJsonPost(Uri uri, byte[] body)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Post, uri)
-            {
-                Content = new ByteArrayContent(body)
-            };
-            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json")
-            {
-                CharSet = "utf-8"
-            };
-            return request;
         }
 
         public void Dispose() => _http.Dispose();

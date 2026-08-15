@@ -145,6 +145,7 @@ namespace Malco.Settings.Views
             var items = featureItems
                 .Where(item => IsSearchMatch(item, _searchText))
                 .ToList();
+            var layout = _actions.LayoutSnapshot;
             _itemListHost.Children.Add(BuildItemListHeader(feature, featureItems));
             if (items.Count == 0)
             {
@@ -159,7 +160,7 @@ namespace Malco.Settings.Views
             AutomationProperties.SetLiveSetting(_itemListHost, AutomationLiveSetting.Polite);
             foreach (var item in items)
             {
-                _itemListHost.Children.Add(BuildItemRow(feature, item));
+                _itemListHost.Children.Add(BuildItemRow(feature, item, layout));
             }
         }
 
@@ -217,7 +218,8 @@ namespace Malco.Settings.Views
 
         private FrameworkElement BuildItemRow(
             FeatureSettingsDefinition feature,
-            TechTreeItem item)
+            TechTreeItem item,
+            HudLayoutSnapshot layout)
         {
             var grid = new Grid { Margin = new Thickness(12d, 0d, 12d, 0d) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44d) });
@@ -230,7 +232,7 @@ namespace Malco.Settings.Views
             name.TextTrimming = TextTrimming.CharacterEllipsis;
             Grid.SetColumn(name, 1);
             grid.Children.Add(name);
-            var enabled = feature.ItemPolicy.ReadValue(_actions.Layout, item);
+            var enabled = feature.ItemPolicy.ReadValue(layout, item);
             var toggle = BuildSwitch(
                 feature.ItemPolicy.SettingLabel + ": " + displayName,
                 enabled,

@@ -9,18 +9,23 @@ namespace Malco.Data
     {
         private const int MutaliskUnitId = 43;
         private const int CocoonUnitId = 59;
-        private readonly WorkerResourceGroupProjector _workerResourceGroupProjector =
-            new WorkerResourceGroupProjector();
+        private readonly GasWorkerAssignmentProjector _gasWorkerProjector =
+            new GasWorkerAssignmentProjector();
+        private readonly MineralWorkerAssignmentProjector _mineralWorkerProjector =
+            new MineralWorkerAssignmentProjector();
         private readonly UnitSpatialStateProjector _unitSpatialStateProjector =
             new UnitSpatialStateProjector();
 
         public void ResetSessionState()
         {
-            _workerResourceGroupProjector.ResetSessionState();
+            _gasWorkerProjector.ResetSessionState();
+            _mineralWorkerProjector.ResetSessionState();
             _unitSpatialStateProjector.ResetSessionState();
         }
 
-        public GameSnapshot BuildSemanticSnapshot(BwrApiRuntimeSnapshot runtime)
+        public GameSnapshot BuildSemanticSnapshot(
+            BwrApiRuntimeSnapshot runtime,
+            string workerStateStatus)
         {
             if (runtime == null)
             {
@@ -56,13 +61,18 @@ namespace Malco.Data
                         : workers.Count(unit => unit.UnitId == workerUnitId);
                 });
             var workersTotal = workerTotalsByType.Values.Sum();
-            var workersIdle = workers.Count(unit => WorkerOrderSemantics.IsIdle(unit.OrderId));
-            var workersActive = workers.Count(unit =>
+            var observedWorkersIdle = workers.Count(unit => WorkerOrderSemantics.IsIdle(unit.OrderId));
+            var observedWorkersActive = workers.Count(unit =>
                 IsWorkerActiveOrder(BwapiBroodWarTables.GetWorkerRace(unit.UnitId), unit.OrderId));
             // Harvesting workers can temporarily leave the public CUnit set.
             // The authoritative completed-unit table still counts them, and a
             // missing completed worker is active rather than idle.
-            workersActive = Math.Min(workersTotal, workersActive + Math.Max(0, workersTotal - workers.Count));
+            var workersIdle = Math.Min(workersTotal, observedWorkersIdle);
+            var missingWorkers = Math.Max(0, workersTotal - workers.Count);
+            var workersActive = Math.Min(
+                workersTotal - workersIdle,
+                observedWorkersActive + missingWorkers);
+            var workersUnknown = workersTotal - workersIdle - workersActive;
             var unitCounts = BuildUnitCounts(countableUnits, false);
             foreach (var workerTotal in workerTotalsByType)
             {
@@ -72,10 +82,17 @@ namespace Malco.Data
                 unitCounts,
                 countableUnits);
             var buildingCounts = BuildUnitCounts(countableUnits, true);
-            var resourceGroups = _workerResourceGroupProjector.Build(
+            HashSet<StableIdentity> gasWorkerKeys;
+            var gasWorkerGroups = _gasWorkerProjector.Build(
                 countableUnits,
                 units,
-                capturedAt);
+                capturedAt,
+                out gasWorkerKeys);
+            var mineralWorkers = _mineralWorkerProjector.Build(
+                countableUnits,
+                units,
+                capturedAt,
+                gasWorkerKeys);
             var upgrades = BuildUpgrades(runtime.Upgrades);
             var availableUpgrades = BuildUpgrades(runtime.AvailableUpgrades);
             var unitSpatialStates = _unitSpatialStateProjector.Build(
@@ -105,12 +122,12 @@ namespace Malco.Data
                 workersTotal,
                 workersIdle,
                 workersActive,
-                Math.Max(0, workersTotal - workersIdle - workersActive),
-                BuildStatus(runtime, hasPerspectivePlayer),
+                workersUnknown,
+                workerStateStatus,
                 unitCounts,
                 buildingCounts,
-                resourceGroups.GasWorkerGroups,
-                resourceGroups.MineralWorkerGroups,
+                gasWorkerGroups,
+                mineralWorkers,
                 upgrades,
                 availableUpgrades,
                 unitSpatialStates);
@@ -148,19 +165,6 @@ namespace Malco.Data
                     StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToList();
-        }
-
-        private static string BuildStatus(BwrApiRuntimeSnapshot runtime, bool hasLocalPlayer)
-        {
-            var status = runtime != null ? runtime.Status ?? string.Empty : string.Empty;
-            if (runtime != null && runtime.IsInMatch && !hasLocalPlayer)
-            {
-                return string.IsNullOrWhiteSpace(status)
-                    ? "Waiting for local player identity"
-                    : status + " (waiting for local player identity)";
-            }
-
-            return status;
         }
 
         private static List<UnitCount> BuildUnitCounts(IEnumerable<BwrApiRuntimeUnit> units, bool buildings)

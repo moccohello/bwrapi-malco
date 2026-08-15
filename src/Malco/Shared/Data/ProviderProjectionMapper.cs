@@ -72,20 +72,8 @@ namespace Malco.Data
                 source.IsAuthoritativeClear,
                 clearReason,
                 "selected-command");
-            SpatialLine[] lines = source.Lines.Select(line => new SpatialLine(
-                SpatialLineIdentity.Create(
-                    line.SourceUnitTag,
-                    KindName(line.Kind),
-                    line.Sequence),
-                line.SourceUnitTypeId,
-                BwapiBroodWarTables.GetUnitTypeInfo(
-                    line.SourceUnitTypeId).Name,
-                KindName(line.Kind),
-                line.Sequence,
-                line.SourceMapPosition.X,
-                line.SourceMapPosition.Y,
-                line.TargetMapPosition.X,
-                line.TargetMapPosition.Y)).ToArray();
+            long generation = checked((long)source.SessionGeneration);
+            long demandEpoch = checked((long)source.DemandEpoch);
             CommandProjectionState retainedCandidate =
                 source.RetainedCoherentRevision.HasValue
                     ? readRetainedCandidate()
@@ -95,14 +83,28 @@ namespace Malco.Data
                 source.RetainedCoherentRevision.HasValue &&
                 retainedCandidate.Revision ==
                     checked((long)source.RetainedCoherentRevision.Value) &&
-                retainedCandidate.DemandEpoch ==
-                    checked((long)source.DemandEpoch) &&
-                retainedCandidate.SessionGeneration ==
-                    checked((long)source.SessionGeneration) &&
+                retainedCandidate.DemandEpoch == demandEpoch &&
+                retainedCandidate.SessionGeneration == generation &&
                 string.Equals(
                     retainedCandidate.SessionEpoch,
                     source.SessionEpoch,
                     StringComparison.Ordinal);
+            SpatialLine[] lines = canRetain
+                ? null
+                : source.Lines.Select(line => new SpatialLine(
+                    SpatialLineIdentity.Create(
+                        line.SourceUnitTag,
+                        KindName(line.Kind),
+                        line.Sequence),
+                    line.SourceUnitTypeId,
+                    BwapiBroodWarTables.GetUnitTypeInfo(
+                        line.SourceUnitTypeId).Name,
+                    KindName(line.Kind),
+                    line.Sequence,
+                    line.SourceMapPosition.X,
+                    line.SourceMapPosition.Y,
+                    line.TargetMapPosition.X,
+                    line.TargetMapPosition.Y)).ToArray();
             return new CommandProjectionState(
                 ConvertCommandStatus(source.Status),
                 canRetain ? retainedCandidate.Lines : lines,
@@ -127,11 +129,11 @@ namespace Malco.Data
                     : source.BaseSemanticSequence.HasValue
                         ? checked((long)source.BaseSemanticSequence.Value)
                         : (long?)null,
-                checked((long)source.SessionGeneration),
+                generation,
                 source.Message ?? string.Empty,
                 checked((long)source.Revision),
                 ConvertCompleteness(source.SelectionCompleteness),
-                checked((long)source.DemandEpoch),
+                demandEpoch,
                 source.IsDemanded,
                 source.IsAuthoritativeClear,
                 source.SessionEpoch,

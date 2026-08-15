@@ -46,6 +46,6 @@ namespace Malco.Configuration
 
         public LayoutSaveStatus Status { get; }
         public string Message { get; }
-        public bool Succeeded { get { return Status == LayoutSaveStatus.Saved; } }
+        public bool Succeeded => Status == LayoutSaveStatus.Saved;
     }
 }

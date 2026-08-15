@@ -36,11 +36,6 @@ namespace Malco.Telemetry
             });
         }
 
-        public IReadOnlyList<TelemetryEvent> PeekBatch()
-        {
-            return PeekBatch(_policy.MaxBatchEvents);
-        }
-
         public IReadOnlyList<TelemetryEvent> PeekBatch(int maximumEvents)
         {
             if (maximumEvents <= 0) return Array.Empty<TelemetryEvent>();
@@ -107,7 +102,7 @@ namespace Malco.Telemetry
             }
         }
 
-        private bool WithMutex(Action action)
+        private void WithMutex(Action action)
         {
             try
             {
@@ -119,7 +114,6 @@ namespace Malco.Telemetry
                         try { acquired = mutex.WaitOne(_policy.MutexWaitMilliseconds); }
                         catch (AbandonedMutexException) { acquired = true; }
                         if (acquired) action();
-                        return acquired;
                     }
                     finally
                     {
@@ -130,18 +124,16 @@ namespace Malco.Telemetry
             catch
             {
                 // Telemetry storage must never affect the host application.
-                return false;
             }
         }
 
-        private static bool TryDelete(string path)
+        private static void TryDelete(string path)
         {
             try
             {
                 if (File.Exists(path)) File.Delete(path);
-                return !File.Exists(path);
             }
-            catch { return false; }
+            catch { }
         }
     }
 }

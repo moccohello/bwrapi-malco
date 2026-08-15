@@ -113,12 +113,44 @@ namespace Malco.Game.Services
                 return incoming;
             }
 
+            if (incomingMatches &&
+                currentMatches &&
+                incoming.IsDemanded &&
+                !incoming.IsAuthoritativeClear &&
+                (current.IsCoherent || current.RetainsPreviousContent))
+            {
+                return RetainCommandContent(current, incoming);
+            }
+
             return incomingMatches
                 ? incoming
                 : CommandProjectionState.Unavailable(
                     generation,
                     "Waiting for a coherent command observation",
                     sessionEpoch: sessionEpoch);
+        }
+
+        private static CommandProjectionState RetainCommandContent(
+            CommandProjectionState current,
+            CommandProjectionState incoming)
+        {
+            return new CommandProjectionState(
+                incoming.Status,
+                current.Lines,
+                current.SelectedUnitTags,
+                current.Sequence,
+                current.Frame,
+                current.Key,
+                current.BaseSemanticSequence,
+                current.SessionGeneration,
+                incoming.Message,
+                incoming.Revision,
+                current.SelectionCompleteness,
+                incoming.DemandEpoch,
+                incoming.IsDemanded,
+                false,
+                current.SessionEpoch,
+                true);
         }
 
         public static ViewportProjectionState SelectViewport(

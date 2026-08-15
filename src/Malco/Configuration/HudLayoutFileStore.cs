@@ -39,7 +39,11 @@ namespace Malco.Configuration
 
             if (!File.Exists(_path))
             {
-                return LoadWithoutPrimary();
+                return new LayoutLoadResult(
+                    LayoutLoadStatus.Missing,
+                    HudLayoutConfig.CreateDefault(),
+                    false,
+                    "No settings file exists; defaults are active.");
             }
 
             HudLayoutConfig primary;
@@ -84,12 +88,6 @@ namespace Malco.Configuration
             string attemptPath = null;
             try
             {
-                var directory = Path.GetDirectoryName(_path);
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
                 attemptPath = WriteNewTemporary(snapshot);
                 File.Move(attemptPath, _path, true);
                 attemptPath = null;
@@ -120,12 +118,6 @@ namespace Malco.Configuration
             string attemptPath = null;
             try
             {
-                var directory = Path.GetDirectoryName(_path);
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
                 attemptPath = WriteNewTemporary(snapshot);
                 // File.Move does not overwrite. If another process recreates the
                 // preserved primary after the checks above, recovery fails closed.
@@ -164,6 +156,8 @@ namespace Malco.Configuration
 
         private string WriteNewTemporary(HudLayoutSnapshot snapshot)
         {
+            var directory = Path.GetDirectoryName(_path);
+            if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
             var document = (snapshot ?? HudLayoutSnapshot.FromLayout(null)).ToMutable();
             document.SchemaVersion = CurrentSchemaVersion;
             var json = JsonSerializer.Serialize(document, SerializerOptions);
@@ -188,15 +182,6 @@ namespace Malco.Configuration
                 throw;
             }
             return attemptPath;
-        }
-
-        private LayoutLoadResult LoadWithoutPrimary()
-        {
-            return new LayoutLoadResult(
-                LayoutLoadStatus.Missing,
-                HudLayoutConfig.CreateDefault(),
-                false,
-                "No settings file exists; defaults are active.");
         }
 
         private LayoutLoadResult BlockedLoad(

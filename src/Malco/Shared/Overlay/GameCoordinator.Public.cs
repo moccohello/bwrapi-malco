@@ -101,6 +101,8 @@ namespace Malco.Game.Services
         public void ClearStableSnapshot(string message)
         {
             var normalizedMessage = message ?? string.Empty;
+            IOverlayStateCommitSink[] sinks = null;
+            OverlayReadModel committedState = null;
             lock (_publicationSync)
             {
                 if (IsClosing)
@@ -119,9 +121,11 @@ namespace Malco.Game.Services
                     Interlocked.Increment(ref _commandPublications);
                     Interlocked.Increment(ref _viewportPublications);
                     Interlocked.Increment(ref _envelopePublications);
-                    MarkStateCommittedLocked();
+                    committedState = _stableOverlayState;
+                    sinks = SnapshotStateCommitSinksLocked();
                 }
             }
+            NotifyStateCommitted(sinks, committedState);
             MarkDirty(ApplicationInputDirtyMask.ClearStableState);
         }
     }

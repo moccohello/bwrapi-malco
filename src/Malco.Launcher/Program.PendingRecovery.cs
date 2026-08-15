@@ -102,7 +102,7 @@ namespace Malco.Launcher
             var committed = new InstallState(
                 state.Generation,
                 state.HighestAcceptedSequence,
-                state.Current.Clone(),
+                state.Current,
                 null,
                 null,
                 null);

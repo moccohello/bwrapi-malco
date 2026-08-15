@@ -59,10 +59,7 @@ namespace Malco.Telemetry
 
         public void TrackGameStarted(string gameSessionId, string race, TelemetryGameSettings settings)
         {
-            if (!Guid.TryParseExact(gameSessionId, "D", out var id)) return;
-            var canonical = id.ToString("D");
-            var variant = canonical[19];
-            if (canonical[14] != '4' || variant != '8' && variant != '9' && variant != 'a' && variant != 'b') return;
+            if (!InstallationIdStore.TryNormalizeUuidV4(gameSessionId, out var canonical)) return;
             if ((race != "terran" && race != "zerg" && race != "protoss") || settings == null) return;
             Track(TelemetryEvent.Create("game_started", new Dictionary<string, object>
             {
@@ -157,6 +154,8 @@ namespace Malco.Telemetry
 
     public sealed class TelemetryGameSettings
     {
+        private readonly Dictionary<string, object> _properties;
+
         public TelemetryGameSettings(
             string language,
             int enabledFeatureCount,
@@ -168,41 +167,20 @@ namespace Malco.Telemetry
             int abilityDisplayModeCount,
             bool showTransportCargo)
         {
-            Language = language;
-            EnabledFeatureCount = enabledFeatureCount;
-            VisibleItemCount = visibleItemCount;
-            AvailableAlertCount = availableAlertCount;
-            CompletionAlertCount = completionAlertCount;
-            CompletionDisplayMode = completionDisplayMode;
-            CompletionCountdownSeconds = completionCountdownSeconds;
-            AbilityDisplayModeCount = abilityDisplayModeCount;
-            ShowTransportCargo = showTransportCargo;
-        }
-
-        internal Dictionary<string, object> ToProperties()
-        {
-            return new Dictionary<string, object>
+            _properties = new Dictionary<string, object>
             {
-                ["language"] = Language,
-                ["enabled_feature_count"] = EnabledFeatureCount,
-                ["visible_item_count"] = VisibleItemCount,
-                ["available_alert_count"] = AvailableAlertCount,
-                ["completion_alert_count"] = CompletionAlertCount,
-                ["completion_display_mode"] = CompletionDisplayMode,
-                ["completion_countdown_seconds"] = CompletionCountdownSeconds,
-                ["ability_display_mode_count"] = AbilityDisplayModeCount,
-                ["show_transport_cargo"] = ShowTransportCargo
+                ["language"] = language,
+                ["enabled_feature_count"] = enabledFeatureCount,
+                ["visible_item_count"] = visibleItemCount,
+                ["available_alert_count"] = availableAlertCount,
+                ["completion_alert_count"] = completionAlertCount,
+                ["completion_display_mode"] = completionDisplayMode,
+                ["completion_countdown_seconds"] = completionCountdownSeconds,
+                ["ability_display_mode_count"] = abilityDisplayModeCount,
+                ["show_transport_cargo"] = showTransportCargo
             };
         }
 
-        public string Language { get; }
-        public int EnabledFeatureCount { get; }
-        public int VisibleItemCount { get; }
-        public int AvailableAlertCount { get; }
-        public int CompletionAlertCount { get; }
-        public string CompletionDisplayMode { get; }
-        public int CompletionCountdownSeconds { get; }
-        public int AbilityDisplayModeCount { get; }
-        public bool ShowTransportCargo { get; }
+        internal Dictionary<string, object> ToProperties() => _properties;
     }
 }

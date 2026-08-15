@@ -41,7 +41,7 @@ namespace Malco.Data
                 semantic,
                 CommandProjectionState.Unavailable(0, snapshot.WorkerStateStatus),
                 ViewportProjectionState.Unavailable(snapshot.WorkerStateStatus));
-            _projectionMailbox.Publish(_channels.Viewport);
+            _projectionMailbox.Commit(_channels.Viewport, out _);
         }
 
         public bool IsClosing => Volatile.Read(ref _closing) != 0;
@@ -59,11 +59,11 @@ namespace Malco.Data
             {
                 if (IsClosing || _terminalPublication) return;
                 _commitSink = sink;
-                sink.MarkProviderCommit(
-                    ProviderCommitMask.Semantic |
-                    ProviderCommitMask.Commands |
-                    ProviderCommitMask.ProjectionControl);
             }
+            sink.MarkProviderCommit(
+                ProviderCommitMask.Semantic |
+                ProviderCommitMask.Commands |
+                ProviderCommitMask.ProjectionControl);
         }
 
         public void UnregisterCommitSink(IProviderCommitSink sink)

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using BwrApi.Client;
+using Malco.Application.Contracts.Projection;
 using Malco.Application.Demand;
 
 namespace Malco.Data
@@ -13,6 +14,11 @@ namespace Malco.Data
             long epoch)
         {
             if (IsClosing) return;
+            var viewportChanged = false;
+            var commandsChanged = false;
+            ViewportProjectionState viewport = null;
+            IProviderCommitSink commitSink = null;
+            IProjectionPresentationCommitSink presentationCommitSink = null;
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
@@ -23,23 +29,25 @@ namespace Malco.Data
 
                 if (previousDemand.NeedsProjection != demand.NeedsProjection)
                 {
-                    PublishViewportLocked(
-                        ViewportProjectionState.Unavailable(
-                            demand.NeedsProjection
-                                ? "Waiting for a fresh viewport observation"
-                                : "Viewport projection disabled",
-                            generation,
-                            PendingProjectionRevision,
-                            epoch,
-                            ProviderStatus.NotReady,
-                            state.Semantic.SessionEpoch,
-                            true,
-                            ProjectionClearReason.DemandChanged));
+                    viewport = ViewportProjectionState.Unavailable(
+                        demand.NeedsProjection
+                            ? "Waiting for a fresh viewport observation"
+                            : "Viewport projection disabled",
+                        generation,
+                        PendingProjectionRevision,
+                        epoch,
+                        ProviderStatus.NotReady,
+                        state.Semantic.SessionEpoch,
+                        true,
+                        ProjectionClearReason.DemandChanged);
+                    viewportChanged = PublishViewportLocked(
+                        viewport,
+                        out presentationCommitSink);
                 }
 
                 if (previousDemand.NeedsCommands != demand.NeedsCommands)
                 {
-                    PublishCommandsLocked(
+                    commandsChanged = PublishCommandsLocked(
                         CommandProjectionState.Unavailable(
                             generation,
                             demand.NeedsCommands
@@ -53,7 +61,13 @@ namespace Malco.Data
                             state.Semantic.SessionEpoch,
                             clearReason: ProjectionClearReason.DemandChanged));
                 }
+                commitSink = _commitSink;
             }
+            presentationCommitSink?.MarkProjectionPresentationCommitted();
+            if (viewportChanged)
+                commitSink?.MarkProviderCommit(ProviderCommitMask.ProjectionControl);
+            if (commandsChanged)
+                commitSink?.MarkProviderCommit(ProviderCommitMask.Commands);
         }
 
         public void PublishViewportObservation(BwrApiViewportProjectionV1 source)
@@ -73,39 +87,57 @@ namespace Malco.Data
         private void PublishViewport(ViewportProjectionState viewport)
         {
             if (IsClosing) return;
+            var changed = false;
+            IProviderCommitSink commitSink = null;
+            IProjectionPresentationCommitSink presentationCommitSink = null;
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
-                PublishViewportLocked(viewport);
+                changed = PublishViewportLocked(
+                    viewport,
+                    out presentationCommitSink);
+                commitSink = _commitSink;
             }
+            if (!changed) return;
+            presentationCommitSink?.MarkProjectionPresentationCommitted();
+            commitSink?.MarkProviderCommit(
+                ProviderCommitMask.ProjectionControl);
         }
 
         private void PublishCommands(CommandProjectionState commands)
         {
             if (IsClosing) return;
+            var changed = false;
+            IProviderCommitSink commitSink = null;
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
-                PublishCommandsLocked(commands);
+                changed = PublishCommandsLocked(commands);
+                commitSink = _commitSink;
             }
+            if (changed)
+                commitSink?.MarkProviderCommit(ProviderCommitMask.Commands);
         }
 
-        private void PublishViewportLocked(
-            ViewportProjectionState viewport)
+        private bool PublishViewportLocked(
+            ViewportProjectionState viewport,
+            out IProjectionPresentationCommitSink presentationCommitSink)
         {
+            presentationCommitSink = null;
             ProviderChannelState before = Volatile.Read(ref _channels);
             ProviderChannelState after =
                 ProviderChannelStateUpdater.UpdateViewport(
                     ref _channels,
                     viewport);
-            if (ReferenceEquals(before, after)) return;
-            _projectionMailbox.Publish(viewport);
+            if (ReferenceEquals(before, after)) return false;
+            _projectionMailbox.Commit(
+                viewport,
+                out presentationCommitSink);
             _metrics.RecordProjectionCommit();
-            _commitSink?.MarkProviderCommit(
-                ProviderCommitMask.ProjectionControl);
+            return true;
         }
 
-        private void PublishCommandsLocked(
+        private bool PublishCommandsLocked(
             CommandProjectionState commands)
         {
             ProviderChannelState before = Volatile.Read(ref _channels);
@@ -113,9 +145,9 @@ namespace Malco.Data
                 ProviderChannelStateUpdater.UpdateCommands(
                     ref _channels,
                     commands);
-            if (ReferenceEquals(before, after)) return;
+            if (ReferenceEquals(before, after)) return false;
             _metrics.RecordCommandCommit();
-            _commitSink?.MarkProviderCommit(ProviderCommitMask.Commands);
+            return true;
         }
     }
 }

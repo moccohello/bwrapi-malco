@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Malco.Models;
+using Malco.Configuration.Models;
 using Malco.Settings.Contracts;
 using Malco.Settings.Controller;
 
@@ -63,13 +64,12 @@ namespace Malco.Settings.Views
 
     internal interface ISettingsViewActions
     {
-        bool EditorMode { get; }
         SettingsPage ActiveEditorPage { get; set; }
-        string SelectedWidgetKey { get; set; }
+        string SelectedWidgetKey { get; }
         Race SelectedTechTreeRace { get; set; }
         double ViewWidth { get; }
         Dispatcher Dispatcher { get; }
-        HudLayoutConfig Layout { get; }
+        HudLayoutSnapshot LayoutSnapshot { get; }
         bool HudTemporarilyHidden { get; }
         string ProgramVersion { get; }
         SettingsEditResult ApplyEdit(SettingsEdit edit);

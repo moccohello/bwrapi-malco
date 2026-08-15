@@ -42,7 +42,7 @@ namespace Malco
             }
 
             PrepareShutdownOnce();
-            var shutdown = _shutdownController.TryStopApplication(_coordinator);
+            var shutdown = _runtimeHost.TryStop();
             if (!shutdown.IsComplete)
             {
                 _shutdownBlocked = true;
@@ -64,16 +64,9 @@ namespace Malco
         private void PrepareShutdownOnce()
         {
             if (_shutdownPreparationComplete) return;
+            _runtimeHost.BeginShutdown();
             _shutdownRequested = true;
             _shutdownPreparationComplete = true;
-            _shellController.PrepareForRuntimeShutdown();
-            _projectionCommitSubscription.Dispose();
-            _framePump.Stop();
-            _coordinator.UnregisterStateCommitSink(_presentationScheduler);
-            if (_telemetry != null) _coordinator.UnregisterStateCommitSink(_telemetry);
-            _presentationScheduler.Stop();
-            _presentationClock.Stop();
-            SetOverlayPresentation(false);
         }
 
         private void OnSourceInitialized(object sender, EventArgs args)
@@ -171,7 +164,7 @@ namespace Malco
             {
                 return;
             }
-            if (_coordinator != null && !_coordinator.IsShutdownComplete)
+            if (_runtimeHost != null && !_runtimeHost.IsShutdownComplete)
             {
                 _shutdownBlocked = true;
                 return;
@@ -179,7 +172,7 @@ namespace Malco
 
             DetachWindowSubscriptions();
             _resourcesDisposed = true;
-            _applicationSession?.Dispose();
+            _runtimeHost?.Complete();
         }
 
     }

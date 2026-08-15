@@ -23,7 +23,7 @@ namespace Malco.Updates
         private string _lastSessionEpoch = string.Empty;
         private long _lastSessionGeneration = long.MinValue;
         private bool _checkRunning;
-        private long _pendingChecks;
+        private bool _recheckPending;
         private bool _shutdownRequested;
         private bool _started;
         private bool _disposed;
@@ -91,7 +91,7 @@ namespace Malco.Updates
                 _lastSessionGeneration = semantic.SessionGeneration;
                 if (_checkRunning)
                 {
-                    _pendingChecks++;
+                    _recheckPending = true;
                     return;
                 }
                 _checkRunning = true;
@@ -124,11 +124,12 @@ namespace Malco.Updates
                     if (required)
                     {
                         _shutdownRequested = true;
+                        _recheckPending = false;
                         _checkRunning = false;
                     }
-                    else if (_pendingChecks > 0)
+                    else if (_recheckPending)
                     {
-                        _pendingChecks--;
+                        _recheckPending = false;
                         continue;
                     }
                     else
@@ -209,7 +210,7 @@ namespace Malco.Updates
             {
                 if (_disposed) return;
                 _disposed = true;
-                _pendingChecks = 0;
+                _recheckPending = false;
                 unregister = _started;
                 _started = false;
             }

@@ -185,9 +185,7 @@ namespace Malco.Launcher
                         await output.WriteAsync(buffer.AsMemory(0, read), cancellation.Token).ConfigureAwait(false);
                         hash.AppendData(buffer, 0, read);
                         written += read;
-                        var percentage = archive.Length <= 0
-                            ? 0
-                            : (int)(written * 100L / archive.Length);
+                        var percentage = (int)(written * 100L / archive.Length);
                         if (percentage > lastReportedPercentage)
                         {
                             lastReportedPercentage = percentage;

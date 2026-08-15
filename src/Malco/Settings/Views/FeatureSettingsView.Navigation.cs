@@ -161,7 +161,7 @@ namespace Malco.Settings.Views
                 case FeatureSettingsDetailKind.AbilityStatus:
                     return UiText.Get("Per unit");
                 case FeatureSettingsDetailKind.TransportCargo:
-                    return UiText.Get(_actions.Layout.ShowTransportCargo ? "On" : "Off");
+                    return UiText.Get(_actions.LayoutSnapshot.ShowTransportCargo ? "On" : "Off");
                 default:
                     return UiText.Get(_actions.IsFeatureEnabled(featureKey) ? "On" : "Off");
             }
