@@ -50,12 +50,11 @@
 #endif
 
 [Languages]
-Name: "en_us"; MessagesFile: "compiler:Default.isl,language-en-US.isl"; LicenseFile: "terms-en.txt"
-Name: "ko_kr"; MessagesFile: "compiler:Default.isl,compiler:Languages\Korean.isl,language-ko-KR.isl"; LicenseFile: "terms-ko.txt"
+Name: "en_us"; MessagesFile: "compiler:Default.isl,language-en-US.isl"
+Name: "ko_kr"; MessagesFile: "compiler:Default.isl,compiler:Languages\Korean.isl,language-ko-KR.isl"
 
 [CustomMessages]
 en_us.StartMalco=Start Malco
-en_us.SilentUnsupported=Malco requires the user to review and accept the data collection terms, so unattended installation is not supported.
 en_us.UnsafeInstallPath=Setup refuses to use a reparse-point install directory.
 en_us.MarkerFailure=Could not create the fixed Malco install-root marker.
 en_us.LanguageFailure=Could not save the selected Malco language.
@@ -70,7 +69,6 @@ en_us.DotNetLaunchFailure=The Microsoft .NET Desktop Runtime installer could not
 en_us.DotNetInstallFailure=Microsoft .NET Desktop Runtime installation failed with exit code %1.
 en_us.DotNetVerificationFailure=Microsoft .NET Desktop Runtime was not detected after installation.
 ko_kr.StartMalco=Malco 시작
-ko_kr.SilentUnsupported=Malco를 설치하려면 정보 수집 약관을 검토하고 동의해야 하므로 무인 설치는 지원하지 않습니다.
 ko_kr.UnsafeInstallPath=재분석 지점으로 연결된 폴더에는 Malco를 설치할 수 없습니다.
 ko_kr.MarkerFailure=Malco 설치 폴더 표식을 만들지 못했습니다.
 ko_kr.LanguageFailure=선택한 Malco 언어를 저장하지 못했습니다.
@@ -318,15 +316,6 @@ var
   InstallPath: String;
   InstallAttributes: Integer;
 begin
-  if WizardSilent then
-  begin
-    MsgBox(
-      ExpandConstant('{cm:SilentUnsupported}'),
-      mbError,
-      MB_OK);
-    Result := False;
-    Exit;
-  end;
   InstallPath := ExpandConstant('{localappdata}\Programs\Malco');
   InstallAttributes := WinGetFileAttributes(InstallPath);
   if (InstallAttributes <> -1) and ((InstallAttributes and $400) <> 0) then
