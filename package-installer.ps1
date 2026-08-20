@@ -57,7 +57,7 @@ $expectedInstaller = Join-Path $outputRoot ("Malco-{0}-Setup.exe" -f $releaseVer
 New-Item -ItemType Directory -Path $preparedRoot, $compiledRoot -Force | Out-Null
 try {
     Copy-Item -LiteralPath $launcherPath -Destination (Join-Path $preparedRoot "Malco.Launcher.exe")
-    Copy-Item -LiteralPath $policyPath -Destination (Join-Path $preparedRoot "launcher-policy.json")
+    Copy-Utf8JsonContract $policyPath (Join-Path $preparedRoot "launcher-policy.json") "Launcher policy"
     Copy-Item -LiteralPath $installerDefinition -Destination (Join-Path $workRoot "Malco.iss")
     Copy-Item -LiteralPath $englishLanguage -Destination (Join-Path $workRoot "language-en-US.isl")
     Copy-Item -LiteralPath $koreanLanguage -Destination (Join-Path $workRoot "language-ko-KR.isl")
