@@ -152,6 +152,7 @@ Type: files; Name: "{userdocs}\StarCraft\Malco\.malco-migration-*.tmp"
 Type: dirifempty; Name: "{userdocs}\StarCraft\Malco"
 Type: files; Name: "{app}\data\hud-layout.json"
 Type: files; Name: "{app}\data\hud-layout.json.tmp"
+Type: files; Name: "{app}\data\hud-layout.json.install.tmp"
 Type: files; Name: "{app}\data\hud-layout.json.saving.*.tmp"
 Type: files; Name: "{app}\data\overlay-hud-metrics.json"
 Type: files; Name: "{app}\data\.migration-v1.complete"
@@ -322,11 +323,164 @@ begin
   Result := True;
 end;
 
+function SaveUtf8TextFile(const FileName, Content: String): Boolean;
+var
+  Utf8: AnsiString;
+  Handle: Integer;
+begin
+  Result := False;
+  Utf8 := Utf8Encode(Content);
+  Handle := FileCreate(FileName);
+  if Handle = -1 then
+    Exit;
+  try
+    Result := (Length(Utf8) = 0) or (FileWrite(Handle, Utf8[1], Length(Utf8)) = Length(Utf8));
+  finally
+    FileClose(Handle);
+  end;
+  if not Result then
+    DeleteFile(FileName);
+end;
+
+function LoadUtf8TextFile(const FileName: String; var Content: String): Boolean;
+var
+  Handle: Integer;
+  Size: Integer;
+  Utf8: AnsiString;
+begin
+  Result := False;
+  Content := '';
+  Handle := FileOpen(FileName, fmOpenRead or fmShareDenyWrite);
+  if Handle = -1 then
+    Exit;
+  try
+    Size := FileSeek(Handle, 0, 2);
+    if (Size < 0) or (Size > 1048576) then
+      Exit;
+    FileSeek(Handle, 0, 0);
+    if Size = 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+    SetLength(Utf8, Size);
+    if FileRead(Handle, Utf8[1], Size) <> Size then
+      Exit;
+    if (Size >= 3) and (Ord(Utf8[1]) = $EF) and (Ord(Utf8[2]) = $BB) and (Ord(Utf8[3]) = $BF) then
+      Delete(Utf8, 1, 3);
+    Content := Utf8ToString(Utf8);
+    Result := True;
+  finally
+    FileClose(Handle);
+  end;
+end;
+
+function ReplaceUtf8TextFile(const FileName, Content: String): Boolean;
+var
+  Temporary: String;
+begin
+  Temporary := FileName + '.install.tmp';
+  DeleteFile(Temporary);
+  Result := SaveUtf8TextFile(Temporary, Content) and FileCopy(Temporary, FileName, False);
+  DeleteFile(Temporary);
+end;
+
+function SkipJsonWhite(const S: String; Index: Integer): Integer;
+begin
+  while (Index <= Length(S)) and (Ord(S[Index]) <= 32) do
+    Inc(Index);
+  Result := Index;
+end;
+
+function SetJsonLanguage(const Json, Language: String): String;
+var
+  LowerJson: String;
+  KeyPos: Integer;
+  I: Integer;
+  QuoteEnd: Integer;
+  OpenBrace: Integer;
+begin
+  LowerJson := LowerCase(Json);
+  KeyPos := Pos('"language"', LowerJson);
+  if KeyPos > 0 then
+  begin
+    I := SkipJsonWhite(Json, KeyPos + 10);
+    if (I > Length(Json)) or (Json[I] <> ':') then
+    begin
+      Result := '';
+      Exit;
+    end;
+    I := SkipJsonWhite(Json, I + 1);
+    if (I > Length(Json)) or (Json[I] <> '"') then
+    begin
+      Result := '';
+      Exit;
+    end;
+    QuoteEnd := I + 1;
+    while (QuoteEnd <= Length(Json)) and (Json[QuoteEnd] <> '"') do
+      Inc(QuoteEnd);
+    if QuoteEnd > Length(Json) then
+    begin
+      Result := '';
+      Exit;
+    end;
+    Result := Copy(Json, 1, I) + Language + Copy(Json, QuoteEnd, MaxInt);
+    Exit;
+  end;
+
+  OpenBrace := Pos('{', Json);
+  if OpenBrace = 0 then
+  begin
+    Result :=
+      '{' + #13#10 +
+      '  "SchemaVersion": 3,' + #13#10 +
+      '  "Language": "' + Language + '"' + #13#10 +
+      '}' + #13#10;
+    Exit;
+  end;
+
+  I := SkipJsonWhite(Json, OpenBrace + 1);
+  if (I <= Length(Json)) and (Json[I] = '}') then
+  begin
+    Result := Copy(Json, 1, OpenBrace) + #13#10 + '  "Language": "' + Language + '"' + #13#10 + Copy(Json, I, MaxInt);
+    Exit;
+  end;
+
+  Result := Copy(Json, 1, OpenBrace) + #13#10 + '  "Language": "' + Language + '",' + Copy(Json, OpenBrace + 1, MaxInt);
+end;
+
+function WriteLayoutLanguage(const LayoutPath, LayoutLanguage: String): Boolean;
+var
+  LayoutJson: String;
+  UpdatedJson: String;
+begin
+  if not FileExists(LayoutPath) then
+  begin
+    LayoutJson :=
+      '{' + #13#10 +
+      '  "SchemaVersion": 3,' + #13#10 +
+      '  "Language": "' + LayoutLanguage + '"' + #13#10 +
+      '}' + #13#10;
+    Result := SaveUtf8TextFile(LayoutPath, LayoutJson);
+    Exit;
+  end;
+
+  Result := False;
+  if not LoadUtf8TextFile(LayoutPath, LayoutJson) then
+    Exit;
+  UpdatedJson := SetJsonLanguage(LayoutJson, LayoutLanguage);
+  if UpdatedJson = '' then
+    Exit;
+  Result := ReplaceUtf8TextFile(LayoutPath, UpdatedJson);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   MarkerPath: String;
   LanguagePath: String;
   LanguageCode: String;
+  LayoutPath: String;
+  LayoutLanguage: String;
 begin
   if CurStep <> ssPostInstall then
     Exit;
@@ -336,10 +490,20 @@ begin
     RaiseException(ExpandConstant('{cm:MarkerFailure}'));
 
   if CompareText(ActiveLanguage, 'ko_kr') = 0 then
-    LanguageCode := 'ko-KR'
+  begin
+    LanguageCode := 'ko-KR';
+    LayoutLanguage := 'ko_KR';
+  end
   else
+  begin
     LanguageCode := 'en-US';
+    LayoutLanguage := 'en_US';
+  end;
   LanguagePath := ExpandConstant('{app}\data\installer-language.txt');
   if not SaveStringToFile(LanguagePath, LanguageCode + #13#10, False) then
+    RaiseException(ExpandConstant('{cm:LanguageFailure}'));
+
+  LayoutPath := ExpandConstant('{app}\data\hud-layout.json');
+  if not WriteLayoutLanguage(LayoutPath, LayoutLanguage) then
     RaiseException(ExpandConstant('{cm:LanguageFailure}'));
 end;
