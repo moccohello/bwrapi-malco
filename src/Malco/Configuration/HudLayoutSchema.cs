@@ -47,6 +47,15 @@ namespace Malco.Configuration
                     return false;
                 }
 
+                if (layout.Widgets == null || layout.Widgets.Count == 0)
+                {
+                    var language = layout.Language;
+                    layout = HudLayoutConfig.CreateDefault();
+                    layout.Language = MalcoPreferenceValues.NormalizeLanguage(language);
+                    layout.SchemaVersion = CurrentSchemaVersion;
+                    return true;
+                }
+
                 NormalizeCurrentSchema(layout);
                 layout.SchemaVersion = CurrentSchemaVersion;
                 return true;

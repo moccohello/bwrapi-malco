@@ -11,7 +11,7 @@ namespace Malco
         public HudLayoutConfig()
         {
             SchemaVersion = Configuration.HudLayoutFileStore.CurrentSchemaVersion;
-            Language = MalcoPreferenceValues.English;
+            Language = MalcoPreferenceValues.NormalizeLanguage(null);
             CompletionDisplayMode = MalcoPreferenceValues.Progress;
             CompletionCountdownSeconds = MalcoPreferenceValues.DefaultCompletionCountdownSeconds;
             UnitIconSize = MalcoPreferenceValues.IconMedium;
