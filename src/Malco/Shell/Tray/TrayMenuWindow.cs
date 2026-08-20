@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Malco.Localization;
 using Malco.Settings.Views;
+using Malco.Shell.Input;
 
 namespace Malco.Shell.Tray
 {
@@ -20,6 +21,8 @@ namespace Malco.Shell.Tray
         private readonly StackPanel _diagnostics;
         private readonly Button _settingsButton;
         private readonly Button _quitButton;
+        private TextBlock _settingsLabel;
+        private TextBlock _settingsHotkeyHint;
         private int _cursorX;
         private int _cursorY;
         private bool _closing;
@@ -67,11 +70,12 @@ namespace Malco.Shell.Tray
             _diagnostics = new StackPanel { Margin = new Thickness(0, 2, 0, 2) };
             root.Children.Add(_diagnostics);
 
-            _settingsButton = CreateButton(UiText.Get("Settings"));
+            _settingsButton = CreateSettingsButton();
             _settingsButton.Click += (_, _) => openSettings();
             root.Children.Add(_settingsButton);
 
             _quitButton = CreateButton(UiText.Get("Quit Malco"));
+            AutomationProperties.SetName(_quitButton, UiText.Get("Quit Malco"));
             _quitButton.Click += (_, _) => requestQuit();
             root.Children.Add(_quitButton);
 
@@ -97,7 +101,7 @@ namespace Malco.Shell.Tray
             string settingsText,
             string quitText)
         {
-            _settingsButton.Content = settingsText;
+            _settingsLabel.Text = settingsText;
             _quitButton.Content = quitText;
             AutomationProperties.SetName(_settingsButton, settingsText);
             AutomationProperties.SetName(_quitButton, quitText);
@@ -171,11 +175,45 @@ namespace Malco.Shell.Tray
             };
         }
 
-        private static Button CreateButton(string text)
+        private Button CreateSettingsButton()
+        {
+            _settingsLabel = new TextBlock
+            {
+                Text = UiText.Get("Settings"),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            _settingsHotkeyHint = new TextBlock
+            {
+                Text = HotkeyController.ShortcutDisplay,
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 11,
+                Foreground = Brush(SettingsVisualTokens.TextSecondary),
+                Visibility = Visibility.Collapsed
+            };
+            var row = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(_settingsHotkeyHint, Dock.Right);
+            row.Children.Add(_settingsHotkeyHint);
+            row.Children.Add(_settingsLabel);
+
+            var button = CreateButton(row);
+            button.MouseEnter += (_, _) => ShowSettingsHotkey(true);
+            button.MouseLeave += (_, _) => ShowSettingsHotkey(false);
+            AutomationProperties.SetName(button, UiText.Get("Settings"));
+            AutomationProperties.SetHelpText(button, HotkeyController.ShortcutDisplay);
+            return button;
+        }
+
+        private void ShowSettingsHotkey(bool visible)
+        {
+            _settingsHotkeyHint.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static Button CreateButton(object content)
         {
             var button = new Button
             {
-                Content = text,
+                Content = content,
                 Height = 36,
                 Margin = new Thickness(0, 2, 0, 0),
                 Padding = new Thickness(12, 0, 12, 0),
@@ -188,7 +226,6 @@ namespace Malco.Shell.Tray
                 FocusVisualStyle = null,
                 Template = CreateButtonTemplate()
             };
-            AutomationProperties.SetName(button, text);
             return button;
         }
 
