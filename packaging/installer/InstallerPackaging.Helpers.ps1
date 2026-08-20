@@ -8,6 +8,21 @@ function Resolve-RequiredFile {
     return $resolved
 }
 
+function Copy-Utf8JsonContract {
+    param([string]$Source, [string]$Destination, [string]$Label)
+
+    $bytes = [IO.File]::ReadAllBytes($Source)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        $stripped = New-Object byte[] ($bytes.Length - 3)
+        [Array]::Copy($bytes, 3, $stripped, 0, $stripped.Length)
+        $bytes = $stripped
+    }
+    if ($bytes.Length -eq 0 -or $bytes[0] -ne 0x7B) {
+        throw "$Label must be a UTF-8 JSON object."
+    }
+    [IO.File]::WriteAllBytes($Destination, $bytes)
+}
+
 function Assert-ChildPath {
     param([string]$Parent, [string]$Child)
 

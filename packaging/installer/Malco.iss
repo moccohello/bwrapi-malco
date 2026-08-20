@@ -50,8 +50,8 @@
 #endif
 
 [Languages]
-Name: "en_us"; MessagesFile: "compiler:Default.isl,language-en-US.isl"
 Name: "ko_kr"; MessagesFile: "compiler:Default.isl,compiler:Languages\Korean.isl,language-ko-KR.isl"
+Name: "en_us"; MessagesFile: "compiler:Default.isl,language-en-US.isl"
 
 [CustomMessages]
 en_us.StartMalco=Start Malco
