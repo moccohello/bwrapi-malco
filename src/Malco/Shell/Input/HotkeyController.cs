@@ -23,8 +23,9 @@ namespace Malco.Shell.Input
         internal const int ToggleEditorHotKeyId = 0x53C1;
         internal const uint F8VirtualKey = 0x77;
         internal const uint CtrlShiftModifiers = 0x0002u | 0x0004u;
+        internal const string ShortcutDisplay = "Ctrl+Shift+F8";
         internal const string RegistrationFailureMessage =
-            "Ctrl+Shift+F8 could not be registered. Open Settings from the tray icon.";
+            ShortcutDisplay + " could not be registered. Open Settings from the tray icon.";
 
         private readonly Action _toggleEditorIntent;
         private IntPtr _registeredWindow;

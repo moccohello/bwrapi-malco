@@ -80,6 +80,39 @@ function Assert-DesktopRuntimeInstaller {
     }
 }
 
+function Resolve-OfficialNetCoreCheck {
+    param([string]$StagingRoot)
+
+    $nupkgPath = Join-Path $StagingRoot "Microsoft.NET.Tools.NETCoreCheck.x64.7.0.0.nupkg"
+    Invoke-WebRequest -UseBasicParsing -Uri "https://api.nuget.org/v3-flatcontainer/microsoft.net.tools.netcorecheck.x64/7.0.0/microsoft.net.tools.netcorecheck.x64.7.0.0.nupkg" -OutFile $nupkgPath
+    $destination = Join-Path $StagingRoot "NetCoreCheck.exe"
+    $archiveStream = [IO.File]::OpenRead($nupkgPath)
+    $zip = [IO.Compression.ZipArchive]::new($archiveStream, [IO.Compression.ZipArchiveMode]::Read, $false)
+    try {
+        $entry = $null
+        foreach ($candidate in $zip.Entries) {
+            if (($candidate.FullName -replace '\\', '/') -ceq "win-x64/NetCoreCheck.exe") {
+                $entry = $candidate
+                break
+            }
+        }
+        if ($null -eq $entry) {
+            throw "The Microsoft NETCoreCheck package did not contain win-x64/NetCoreCheck.exe."
+        }
+        $input = $entry.Open()
+        try {
+            $output = [IO.File]::Open($destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            try { $input.CopyTo($output); $output.Flush($true) } finally { $output.Dispose() }
+        }
+        finally { $input.Dispose() }
+    }
+    finally {
+        $zip.Dispose()
+        $archiveStream.Dispose()
+    }
+    return $destination
+}
+
 function Read-ReleaseManifest {
     param([string]$Path)
 

@@ -1,6 +1,7 @@
 ; Compile with:
 ;   ISCC.exe /DPreparedRoot=<absolute-prepared-root> /DAppVersion=<version> \
-;     /DInstallerOutput=<absolute-output-directory> Malco.iss
+;     /DInstallerOutput=<absolute-output-directory> \
+;     /DNetCoreCheckExe=<absolute-netcorecheck-exe> Malco.iss
 
 #ifndef PreparedRoot
   #error PreparedRoot must name the complete prepared Malco install root.
@@ -47,6 +48,14 @@
 
 #ifndef DotNetInstallerSha256
   #error DotNetInstallerSha256 must identify the approved runtime installer.
+#endif
+
+#ifndef NetCoreCheckExe
+  #error NetCoreCheckExe must name the official Microsoft NETCoreCheck executable.
+#endif
+
+#if !FileExists(NetCoreCheckExe)
+  #error NetCoreCheckExe does not exist or is not a file.
 #endif
 
 [Languages]
@@ -119,6 +128,7 @@ SetupLogging=yes
 [Files]
 Source: "{#PreparedRoot}\*"; DestDir: "{app}"; Excludes: "data\*,state\*,cache\*,staging\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PreparedRoot}\state\install-state.json"; DestDir: "{app}\state"; Flags: ignoreversion
+Source: "{#NetCoreCheckExe}"; DestDir: "{tmp}"; DestName: "NetCoreCheck.exe"; Flags: dontcopy
 
 [Dirs]
 Name: "{app}\data"
@@ -162,7 +172,6 @@ Type: dirifempty; Name: "{app}"
 
 [Code]
 const
-  DotNetRegistryKey = 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App';
   DotNetMinimumVersion = '{#DotNetMinimumVersion}';
   DotNetInstallerFileName = '{#DotNetInstallerFileName}';
   DotNetDownloadUrl = '{#DotNetDownloadUrl}';
@@ -174,43 +183,26 @@ var
 function WinGetFileAttributes(FileName: String): Integer;
   external 'GetFileAttributesW@kernel32.dll stdcall';
 
-function RegistryHasRequiredDesktopRuntime(RootKey: Integer): Boolean;
-var
-  ValueNames: TArrayOfString;
-  Index: Integer;
-  InstalledValue: Cardinal;
-  InstalledVersion: Int64;
-  MinimumVersion: Int64;
-begin
-  Result := False;
-  if not StrToVersion(DotNetMinimumVersion + '.0', MinimumVersion) then
-    Exit;
-  if not RegGetValueNames(RootKey, DotNetRegistryKey, ValueNames) then
-    Exit;
-  for Index := 0 to GetArrayLength(ValueNames) - 1 do
-  begin
-    if (Pos('10.0.', ValueNames[Index]) = 1) and
-       StrToVersion(ValueNames[Index] + '.0', InstalledVersion) and
-       (ComparePackedVersion(InstalledVersion, MinimumVersion) >= 0) and
-       RegQueryDWordValue(RootKey, DotNetRegistryKey, ValueNames[Index], InstalledValue) and
-       (InstalledValue = 1) then
-    begin
-      Result := True;
-      Exit;
-    end;
-  end;
-end;
-
 function HasRequiredDesktopRuntime(): Boolean;
+var
+  ResultCode: Integer;
 begin
+  ExtractTemporaryFile('NetCoreCheck.exe');
   Result :=
-    RegistryHasRequiredDesktopRuntime(HKLM32) or
-    RegistryHasRequiredDesktopRuntime(HKLM64);
+    Exec(
+      ExpandConstant('{tmp}\NetCoreCheck.exe'),
+      '-n Microsoft.WindowsDesktop.App -v ' + DotNetMinimumVersion + ' -r LatestPatch',
+      '',
+      SW_HIDE,
+      ewWaitUntilTerminated,
+      ResultCode) and
+    (ResultCode = 0);
+  Log('NETCoreCheck Microsoft.WindowsDesktop.App ' + DotNetMinimumVersion + ' LatestPatch -> ' + IntToStr(ResultCode));
 end;
 
 function CanLaunchMalcoAfterInstall(): Boolean;
 begin
-  Result := not RuntimeRestartRequired;
+  Result := (not RuntimeRestartRequired) and HasRequiredDesktopRuntime();
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -301,14 +293,17 @@ begin
     InstallerLock.Free;
   end;
 
+  RuntimeRestartRequired := ResultCode = 3010;
+  if RuntimeRestartRequired then
+  begin
+    NeedsRestart := True;
+    Exit;
+  end;
   if not HasRequiredDesktopRuntime() then
   begin
     Result := CustomMessage('DotNetVerificationFailure');
     Exit;
   end;
-  RuntimeRestartRequired := ResultCode = 3010;
-  if RuntimeRestartRequired then
-    NeedsRestart := True;
 end;
 
 function InitializeSetup(): Boolean;

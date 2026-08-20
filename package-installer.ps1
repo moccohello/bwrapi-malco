@@ -88,6 +88,7 @@ try {
         ([Text.UTF8Encoding]::new($false)))
 
     Add-Type -AssemblyName System.IO.Compression
+    $netCoreCheckExe = Resolve-OfficialNetCoreCheck $workRoot
     $archiveStream = [IO.File]::OpenRead($archivePath)
     $zip = [IO.Compression.ZipArchive]::new($archiveStream, [IO.Compression.ZipArchiveMode]::Read, $false)
     try {
@@ -121,6 +122,7 @@ try {
         "/DDotNetInstallerFileName=$([string]$desktopRuntime.file_name)" `
         "/DDotNetDownloadUrl=$([string]$desktopRuntime.download_url)" `
         "/DDotNetInstallerSha256=$([string]$desktopRuntime.sha256)" `
+        "/DNetCoreCheckExe=$netCoreCheckExe" `
         (Join-Path $workRoot "Malco.iss")
     if ($LASTEXITCODE -ne 0) { throw "Inno Setup did not create the installer." }
     $privateInstaller = Join-Path $compiledRoot ("Malco-{0}-Setup.exe" -f $releaseVersion)
