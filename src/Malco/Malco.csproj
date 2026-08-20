@@ -5,7 +5,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Malco</RootNamespace>
     <AssemblyName>Malco</AssemblyName>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>

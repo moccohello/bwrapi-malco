@@ -37,8 +37,6 @@ $runtimeContractPath = Resolve-RequiredFile $DesktopRuntimeContract "Desktop run
 $runtimeInstallerPath = Resolve-RequiredFile $DesktopRuntimeInstaller "Desktop runtime installer"
 $isccPath = Resolve-RequiredFile $InnoCompilerPath "Inno Setup compiler"
 $installerDefinition = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\Malco.iss") "Installer definition"
-$englishTerms = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\terms-en.txt") "English installation terms"
-$koreanTerms = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\terms-ko.txt") "Korean installation terms"
 $englishLanguage = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\language-en-US.isl") "English installer language label"
 $koreanLanguage = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\language-ko-KR.isl") "Korean installer language label"
 $productIcon = Resolve-RequiredFile (Join-Path $PSScriptRoot "branding\malco.ico") "Malco product icon"
@@ -61,8 +59,6 @@ try {
     Copy-Item -LiteralPath $launcherPath -Destination (Join-Path $preparedRoot "Malco.Launcher.exe")
     Copy-Item -LiteralPath $policyPath -Destination (Join-Path $preparedRoot "launcher-policy.json")
     Copy-Item -LiteralPath $installerDefinition -Destination (Join-Path $workRoot "Malco.iss")
-    Copy-Item -LiteralPath $englishTerms -Destination (Join-Path $workRoot "terms-en.txt")
-    Copy-Item -LiteralPath $koreanTerms -Destination (Join-Path $workRoot "terms-ko.txt")
     Copy-Item -LiteralPath $englishLanguage -Destination (Join-Path $workRoot "language-en-US.isl")
     Copy-Item -LiteralPath $koreanLanguage -Destination (Join-Path $workRoot "language-ko-KR.isl")
     Copy-Item -LiteralPath $productIcon -Destination (Join-Path $workRoot "malco.ico")

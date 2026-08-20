@@ -21,6 +21,10 @@ TestResults/
 coverage/
 publish/
 artifacts/
+.malco-win-release-*/
+tmp_*.bin
+tmp_*.pem
+temp_verify.fsx
 development/
 .agents/
 .codex/
