@@ -24,3 +24,4 @@ It uses bwrapi to read the game state and displays the overlay with the .NET 10 
 - August 20, 2026 — Version 1.0.4 released
 - August 20, 2026 — Version 1.0.5 released
 - August 21, 2026 — Version 1.0.6 released
+- August 24, 2026 — Version 1.0.7 released
