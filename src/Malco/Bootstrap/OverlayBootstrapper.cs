@@ -124,8 +124,12 @@ namespace Malco.Bootstrap
             _providerPendingLifecycle = null;
             _providerPendingOwnership = null;
             Capture(coordinator);
+            // Every installed runtime must recheck the feed at a new game
+            // session. A required release may be published after this Malco
+            // process started, so gating the monitor on the launch-time
+            // network-recheck flag would leave that older process running.
             var requiredUpdateMonitor =
-                _installedLaunchAuthorization?.RequiredUpdateRecheck == true
+                _installedLaunchAuthorization != null
                     ? new RequiredUpdateSessionMonitor(
                         coordinator,
                         _installedLaunchAuthorization.LauncherPath,
