@@ -326,53 +326,29 @@ end;
 function SaveUtf8TextFile(const FileName, Content: String): Boolean;
 var
   Utf8: AnsiString;
-  Handle: Integer;
 begin
-  Result := False;
   Utf8 := Utf8Encode(Content);
-  Handle := FileCreate(FileName);
-  if Handle = -1 then
-    Exit;
-  try
-    Result := (Length(Utf8) = 0) or (FileWrite(Handle, Utf8[1], Length(Utf8)) = Length(Utf8));
-  finally
-    FileClose(Handle);
-  end;
+  Result := SaveStringToFile(FileName, Utf8, False);
   if not Result then
     DeleteFile(FileName);
 end;
 
 function LoadUtf8TextFile(const FileName: String; var Content: String): Boolean;
 var
-  Handle: Integer;
   Size: Integer;
   Utf8: AnsiString;
 begin
   Result := False;
   Content := '';
-  Handle := FileOpen(FileName, fmOpenRead or fmShareDenyWrite);
-  if Handle = -1 then
+  if not LoadStringFromFile(FileName, Utf8) then
     Exit;
-  try
-    Size := FileSeek(Handle, 0, 2);
-    if (Size < 0) or (Size > 1048576) then
-      Exit;
-    FileSeek(Handle, 0, 0);
-    if Size = 0 then
-    begin
-      Result := True;
-      Exit;
-    end;
-    SetLength(Utf8, Size);
-    if FileRead(Handle, Utf8[1], Size) <> Size then
-      Exit;
-    if (Size >= 3) and (Ord(Utf8[1]) = $EF) and (Ord(Utf8[2]) = $BB) and (Ord(Utf8[3]) = $BF) then
-      Delete(Utf8, 1, 3);
-    Content := Utf8ToString(Utf8);
-    Result := True;
-  finally
-    FileClose(Handle);
-  end;
+  Size := Length(Utf8);
+  if Size > 1048576 then
+    Exit;
+  if (Size >= 3) and (Ord(Utf8[1]) = $EF) and (Ord(Utf8[2]) = $BB) and (Ord(Utf8[3]) = $BF) then
+    Delete(Utf8, 1, 3);
+  Content := UTF8Decode(Utf8);
+  Result := True;
 end;
 
 function ReplaceUtf8TextFile(const FileName, Content: String): Boolean;
