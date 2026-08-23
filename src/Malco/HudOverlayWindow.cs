@@ -171,7 +171,9 @@ namespace Malco
             Background = Brushes.Transparent;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = true;
+            // Malco.exe is a background overlay process in every runtime mode.
+            // Only the separate installer/launcher is a taskbar application.
+            ShowInTaskbar = false;
             ShowActivated = false;
             Opacity = 0d;
             Left = 0d;

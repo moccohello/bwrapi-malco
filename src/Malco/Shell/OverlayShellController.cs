@@ -18,6 +18,7 @@ namespace Malco.Shell
     {
         private const int WmShellWake = 0x8000 + 0x5A;
         private const int WsExAppWindow = 0x40000;
+        private const int WsExToolWindow = 0x00000080;
         private const int WsExTransparent = 0x20;
         private const int WsExNoActivate = 0x08000000;
         private const uint SwpFrameChanged = 0x0020;

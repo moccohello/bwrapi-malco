@@ -111,12 +111,22 @@ namespace Malco.Shell
         private void SetInputMode(bool interactive)
         {
             if (_handle == IntPtr.Zero) return;
-            var exStyle = _appliedExtendedStyle != int.MinValue
-                ? _appliedExtendedStyle
-                : NativeMethods.GetWindowLong(_handle, NativeMethods.GwlExStyle);
-            exStyle |= WsExAppWindow;
-            if (interactive) { exStyle &= ~WsExTransparent; exStyle &= ~WsExNoActivate; }
-            else { exStyle |= WsExTransparent; exStyle |= WsExNoActivate; }
+            // Malco.exe is never a taskbar application. WS_EX_TOOLWINDOW keeps
+            // the runtime overlay out of the taskbar and Alt+Tab list in every
+            // mode; the installer is the separate taskbar-facing application.
+            var exStyle = NativeMethods.GetWindowLong(_handle, NativeMethods.GwlExStyle);
+            exStyle &= ~WsExAppWindow;
+            exStyle |= WsExToolWindow;
+            if (interactive)
+            {
+                exStyle &= ~WsExTransparent;
+                exStyle &= ~WsExNoActivate;
+            }
+            else
+            {
+                exStyle |= WsExTransparent;
+                exStyle |= WsExNoActivate;
+            }
             if (_appliedExtendedStyle == exStyle) return;
             Marshal.SetLastPInvokeError(0);
             var previousStyle = NativeMethods.SetWindowLong(_handle, NativeMethods.GwlExStyle, exStyle);
