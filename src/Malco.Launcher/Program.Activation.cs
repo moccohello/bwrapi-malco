@@ -207,6 +207,19 @@ namespace Malco.Launcher
                     : verifiedStagedUpdate;
             }
 
+            string releaseNotes = null;
+            try
+            {
+                using (var installer = new ReleaseInstaller(policy, verifier, stateStore))
+                {
+                    releaseNotes = installer.TryFetchReleaseNote(latest, _language.IsKorean);
+                }
+            }
+            catch (Exception exception) when (IsUpdateFailure(exception))
+            {
+                releaseNotes = null;
+            }
+
             ReleaseReference installedCandidate = null;
             var updateResult = UpdateDialog.ShowUpdate(
                 latest,
@@ -227,7 +240,8 @@ namespace Malco.Launcher
                     installedCandidate = candidate;
                     progress.Report(new UpdateProgress(UpdateStage.Completed));
                     return candidate;
-                });
+                },
+                releaseNotes);
             if (!updateResult.Accepted)
             {
                 return required

@@ -15,7 +15,8 @@ namespace Malco.Launcher
             VerifiedEnvelope release,
             bool required,
             LauncherLanguage language,
-            Func<IProgress<UpdateProgress>, ReleaseReference> install)
+            Func<IProgress<UpdateProgress>, ReleaseReference> install,
+            string notes)
         {
             if (release == null) throw new ArgumentNullException(nameof(release));
             if (language == null) throw new ArgumentNullException(nameof(language));
@@ -28,7 +29,8 @@ namespace Malco.Launcher
                     title,
                     language.UpdateMessage(required, release.Manifest.Version),
                     language,
-                    required)
+                    required,
+                    notes)
             };
             if (!result.Accepted) return result;
 

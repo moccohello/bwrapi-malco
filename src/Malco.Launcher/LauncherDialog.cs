@@ -36,32 +36,51 @@ namespace Malco.Launcher
             string title,
             string message,
             LauncherLanguage language,
-            bool required)
+            bool required,
+            string notes)
         {
-            using (var form = CreateShell(title, new Size(480, 210), !required))
+            var hasNotes = !string.IsNullOrEmpty(notes);
+            using (var form = CreateShell(title, hasNotes ? new Size(480, 372) : new Size(480, 210), !required))
             {
                 var content = new Label
                 {
                     Location = new Point(24, 22),
-                    Size = new Size(432, 106),
+                    Size = new Size(432, hasNotes ? 88 : 106),
                     Text = message
                 };
+                var buttonY = hasNotes ? 320 : 148;
                 var update = new Button
                 {
                     DialogResult = DialogResult.OK,
-                    Location = new Point(required ? 356 : 260, 148),
+                    Location = new Point(required ? 356 : 260, buttonY),
                     Size = new Size(96, 34),
                     Text = language.Yes
                 };
                 form.Controls.Add(content);
+                if (hasNotes)
+                {
+                    form.Controls.Add(new TextBox
+                    {
+                        Location = new Point(24, 116),
+                        Size = new Size(432, 192),
+                        Multiline = true,
+                        ReadOnly = true,
+                        ScrollBars = ScrollBars.Vertical,
+                        WordWrap = true,
+                        Text = notes.Replace("\n", "\r\n"),
+                        HideSelection = true,
+                        BackColor = SystemColors.Window
+                    });
+                }
                 form.Controls.Add(update);
                 form.AcceptButton = update;
+                form.ActiveControl = update;
                 if (!required)
                 {
                     var decline = new Button
                     {
                         DialogResult = DialogResult.Cancel,
-                        Location = new Point(356, 148),
+                        Location = new Point(356, buttonY),
                         Size = new Size(96, 34),
                         Text = language.No
                     };

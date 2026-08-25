@@ -43,6 +43,33 @@ namespace Malco.Launcher
             return _verifier.VerifyEnvelope(bytes);
         }
 
+        public string TryFetchReleaseNote(VerifiedEnvelope envelope, bool korean)
+        {
+            if (envelope == null) throw new ArgumentNullException(nameof(envelope));
+            if (envelope.Manifest == null || envelope.Manifest.Archive == null) return null;
+            try
+            {
+                var notesUri = TryReleaseNotesUri(envelope.Manifest.Archive.Uri);
+                if (notesUri == null) return null;
+                var bytes = TryDownloadBytes(
+                        notesUri,
+                        ContractCodec.MaximumReleaseNotesBytes,
+                        TimeSpan.FromMilliseconds(_policy.FeedTimeoutMilliseconds))
+                    .GetAwaiter().GetResult();
+                if (bytes == null) return null;
+                return ContractCodec.TryReadReleaseNote(bytes, korean);
+            }
+            catch (Exception exception) when (
+                exception is HttpRequestException ||
+                exception is InvalidDataException ||
+                exception is IOException ||
+                exception is TaskCanceledException ||
+                exception is OperationCanceledException)
+            {
+                return null;
+            }
+        }
+
         public ReleaseReference Install(
             VerifiedEnvelope envelope,
             IProgress<UpdateProgress> progress = null)
@@ -100,6 +127,70 @@ namespace Malco.Launcher
         public void Dispose()
         {
             _client.Dispose();
+        }
+
+        private static Uri TryReleaseNotesUri(Uri archiveUri)
+        {
+            Uri notesUri;
+            if (archiveUri == null ||
+                !archiveUri.IsAbsoluteUri ||
+                !string.Equals(archiveUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrEmpty(archiveUri.Host) ||
+                !string.IsNullOrEmpty(archiveUri.UserInfo) ||
+                !archiveUri.AbsolutePath.EndsWith("/payload.zip", StringComparison.Ordinal) ||
+                !Uri.TryCreate(archiveUri, ContractCodec.ReleaseNotesFileName, out notesUri) ||
+                !string.Equals(notesUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                !string.IsNullOrEmpty(notesUri.UserInfo) ||
+                !string.IsNullOrEmpty(notesUri.Query) ||
+                !string.IsNullOrEmpty(notesUri.Fragment) ||
+                !notesUri.AbsolutePath.EndsWith("/" + ContractCodec.ReleaseNotesFileName, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return notesUri;
+        }
+
+        private async Task<byte[]> TryDownloadBytes(Uri uri, int maximumBytes, TimeSpan timeout)
+        {
+            using (var cancellation = new CancellationTokenSource(timeout))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, uri))
+            using (var response = await _client.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellation.Token).ConfigureAwait(false))
+            {
+                if ((int)response.StatusCode < 200 || (int)response.StatusCode > 299)
+                {
+                    return null;
+                }
+                if (response.Content.Headers.ContentLength.HasValue &&
+                    (response.Content.Headers.ContentLength.Value <= 0 ||
+                     response.Content.Headers.ContentLength.Value > maximumBytes))
+                {
+                    return null;
+                }
+                using (var input = await response.Content.ReadAsStreamAsync(cancellation.Token).ConfigureAwait(false))
+                using (var output = new MemoryStream())
+                {
+                    var buffer = new byte[32 * 1024];
+                    while (true)
+                    {
+                        var read = await input.ReadAsync(buffer, cancellation.Token).ConfigureAwait(false);
+                        if (read == 0) break;
+                        if (output.Length > maximumBytes - read)
+                        {
+                            return null;
+                        }
+                        output.Write(buffer, 0, read);
+                    }
+                    if (output.Length == 0)
+                    {
+                        return null;
+                    }
+                    return output.ToArray();
+                }
+            }
         }
 
         private async Task<byte[]> DownloadBytes(Uri uri, int maximumBytes, TimeSpan timeout)
