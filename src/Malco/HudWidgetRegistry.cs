@@ -108,6 +108,7 @@ namespace Malco
             if (string.Equals(key, Units, System.StringComparison.OrdinalIgnoreCase)) return layout.UnitIconSize;
             if (string.Equals(key, Buildings, System.StringComparison.OrdinalIgnoreCase)) return layout.BuildingIconSize;
             if (string.Equals(key, Upgrades, System.StringComparison.OrdinalIgnoreCase)) return layout.CompletedUpgradeIconSize;
+            if (string.Equals(key, "resource-workers", System.StringComparison.OrdinalIgnoreCase)) return layout.ResourceWorkerIconSize;
             return layout.AvailableUpgradeIconSize;
         }
     }

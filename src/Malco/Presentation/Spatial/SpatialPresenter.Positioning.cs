@@ -42,16 +42,16 @@ namespace Malco.Presentation.Spatial
             for (var index = 0; index < _tree.GasCount; index++)
             {
                 var gas = _tree.GetGasAt(index);
-                writes += SetWidth(gas.Badge, 54d * scale);
-                writes += SetHeight(gas.Badge, 30d * scale);
-                writes += SetFontSize(gas.Text, GasWorkerFontSize * scale);
+                writes += SetWidth(gas.Badge, GasWorkerBadgeWidth * _resourceWorkerBadgeScale * scale);
+                writes += SetHeight(gas.Badge, GasWorkerBadgeHeight * _resourceWorkerBadgeScale * scale);
+                writes += SetFontSize(gas.Text, GasWorkerFontSize * _resourceWorkerBadgeScale * scale);
             }
             for (var index = 0; index < _tree.MineralCount; index++)
             {
                 var mineral = _tree.GetMineralAt(index);
-                writes += SetWidth(mineral.Badge, 56d * scale);
-                writes += SetHeight(mineral.Badge, 26d * scale);
-                writes += SetFontSize(mineral.Text, MineralWorkerFontSize * scale);
+                writes += SetWidth(mineral.Badge, MineralWorkerBadgeWidth * _resourceWorkerBadgeScale * scale);
+                writes += SetHeight(mineral.Badge, MineralWorkerBadgeHeight * _resourceWorkerBadgeScale * scale);
+                writes += SetFontSize(mineral.Text, MineralWorkerFontSize * _resourceWorkerBadgeScale * scale);
             }
             for (var index = 0; index < _tree.UnitOverlayCount; index++)
             {

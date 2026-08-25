@@ -141,5 +141,15 @@ namespace Malco.Configuration.Models
                 default: return 6d;
             }
         }
+
+        public static double ResourceWorkerBadgeScale(string value)
+        {
+            switch (NormalizeIconSize(value, IconMedium))
+            {
+                case IconSmall: return 0.75d;
+                case IconLarge: return 1.25d;
+                default: return 1d;
+            }
+        }
     }
 }

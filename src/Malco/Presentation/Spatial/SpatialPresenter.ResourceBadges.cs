@@ -19,14 +19,18 @@ namespace Malco.Presentation.Spatial
             var text = new TextBlock
             {
                 Text = count.ToString(CultureInfo.InvariantCulture) + "/3",
-                FontFamily = new FontFamily("Segoe UI"), FontSize = GasWorkerFontSize, FontWeight = FontWeights.Bold,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = GasWorkerFontSize * _resourceWorkerBadgeScale,
+                FontWeight = FontWeights.Bold,
                 Foreground = _style.GetGasBadgeBrush(count), HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Effect = ResourceTextShadow()
             };
             var badge = new Border
             {
-                Width = 54d, Height = 30d, Child = text, ToolTip = "Gas workers",
+                Width = GasWorkerBadgeWidth * _resourceWorkerBadgeScale,
+                Height = GasWorkerBadgeHeight * _resourceWorkerBadgeScale,
+                Child = text, ToolTip = "Gas workers",
                 Background = _style.ChipBackground, BorderBrush = _style.ChipBorder,
                 BorderThickness = new Thickness(1d), CornerRadius = new CornerRadius(5d)
             };
@@ -37,14 +41,17 @@ namespace Malco.Presentation.Spatial
         {
             var text = new TextBlock
             {
-                Text = FormatMineralBadgeText(group), FontFamily = new FontFamily("Segoe UI"), FontSize = MineralWorkerFontSize,
+                Text = FormatMineralBadgeText(group), FontFamily = new FontFamily("Segoe UI"),
+                FontSize = MineralWorkerFontSize * _resourceWorkerBadgeScale,
                 FontWeight = FontWeights.Bold, Foreground = _style.Text, HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Effect = ResourceTextShadow()
             };
             var badge = new Border
             {
-                Width = 56d, Height = 26d, Child = text,
+                Width = MineralWorkerBadgeWidth * _resourceWorkerBadgeScale,
+                Height = MineralWorkerBadgeHeight * _resourceWorkerBadgeScale,
+                Child = text,
                 ToolTip = "Mineral workers / patches",
                 Background = _style.ChipBackground, BorderBrush = _style.ChipBorder,
                 BorderThickness = new Thickness(0.75d), CornerRadius = new CornerRadius(4d),

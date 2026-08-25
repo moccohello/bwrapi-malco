@@ -24,6 +24,7 @@ namespace Malco.Configuration.Models
             string buildingIconSize,
             string completedUpgradeIconSize,
             string availableUpgradeIconSize,
+            string resourceWorkerIconSize,
             UpgradeCompletionDisplayMode completionDisplayMode,
             int completionCountdownSeconds)
         {
@@ -40,6 +41,7 @@ namespace Malco.Configuration.Models
             BuildingIconSize = MalcoPreferenceValues.NormalizeIconSize(buildingIconSize, MalcoPreferenceValues.IconLarge);
             CompletedUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(completedUpgradeIconSize, MalcoPreferenceValues.IconMedium);
             AvailableUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(availableUpgradeIconSize, MalcoPreferenceValues.IconSmall);
+            ResourceWorkerIconSize = MalcoPreferenceValues.NormalizeIconSize(resourceWorkerIconSize, MalcoPreferenceValues.IconMedium);
             CompletionDisplayMode = completionDisplayMode;
             CompletionCountdownSeconds = MalcoPreferenceValues.NormalizeCompletionCountdownSeconds(completionCountdownSeconds);
         }
@@ -79,6 +81,8 @@ namespace Malco.Configuration.Models
         public string CompletedUpgradeIconSize { get; }
 
         public string AvailableUpgradeIconSize { get; }
+
+        public string ResourceWorkerIconSize { get; }
 
         public string AbilityDisplayMode(int unitId)
         {
@@ -128,6 +132,7 @@ namespace Malco.Configuration.Models
                 layout != null ? layout.BuildingIconSize : MalcoPreferenceValues.IconLarge,
                 layout != null ? layout.CompletedUpgradeIconSize : MalcoPreferenceValues.IconMedium,
                 layout != null ? layout.AvailableUpgradeIconSize : MalcoPreferenceValues.IconSmall,
+                layout != null ? layout.ResourceWorkerIconSize : MalcoPreferenceValues.IconMedium,
                 MalcoPreferenceValues.ParseCompletionMode(layout != null ? layout.CompletionDisplayMode : null),
                 layout != null ? layout.CompletionCountdownSeconds : MalcoPreferenceValues.DefaultCompletionCountdownSeconds);
         }

@@ -18,6 +18,7 @@ namespace Malco
             BuildingIconSize = MalcoPreferenceValues.IconMedium;
             CompletedUpgradeIconSize = MalcoPreferenceValues.IconMedium;
             AvailableUpgradeIconSize = MalcoPreferenceValues.IconMedium;
+            ResourceWorkerIconSize = MalcoPreferenceValues.IconMedium;
             WorkerCountStyle = MalcoPreferenceValues.WorkerCountClassicGreen;
             Widgets = new Dictionary<string, WidgetLayout>(StringComparer.OrdinalIgnoreCase);
             ItemSettings = new Dictionary<string, HudItemSetting>(StringComparer.OrdinalIgnoreCase);
@@ -122,6 +123,8 @@ namespace Malco
 
         public string AvailableUpgradeIconSize { get; set; }
 
+        public string ResourceWorkerIconSize { get; set; }
+
         public string WorkerCountStyle { get; set; }
 
         public Dictionary<string, WidgetLayout> Widgets { get; set; }
@@ -142,6 +145,8 @@ namespace Malco
                 return MalcoPreferenceValues.NormalizeIconSize(CompletedUpgradeIconSize, MalcoPreferenceValues.IconMedium);
             if (string.Equals(featureKey, HudWidgetRegistry.AvailableUpgrades, StringComparison.OrdinalIgnoreCase))
                 return MalcoPreferenceValues.NormalizeIconSize(AvailableUpgradeIconSize, MalcoPreferenceValues.IconSmall);
+            if (string.Equals(featureKey, "resource-workers", StringComparison.OrdinalIgnoreCase))
+                return MalcoPreferenceValues.NormalizeIconSize(ResourceWorkerIconSize, MalcoPreferenceValues.IconMedium);
             return MalcoPreferenceValues.IconLarge;
         }
 
@@ -174,6 +179,13 @@ namespace Malco
                 if (!TryUpdateIconSize(AvailableUpgradeIconSize, size, MalcoPreferenceValues.IconSmall, out normalized))
                     return false;
                 AvailableUpgradeIconSize = normalized;
+                return true;
+            }
+            if (string.Equals(featureKey, "resource-workers", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!TryUpdateIconSize(ResourceWorkerIconSize, size, MalcoPreferenceValues.IconMedium, out normalized))
+                    return false;
+                ResourceWorkerIconSize = normalized;
                 return true;
             }
 

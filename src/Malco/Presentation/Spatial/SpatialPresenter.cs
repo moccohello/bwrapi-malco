@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using Malco.Configuration.Models;
 using Malco.Data;
 
 namespace Malco.Presentation.Spatial
@@ -10,6 +11,10 @@ namespace Malco.Presentation.Spatial
     {
         private const double GasWorkerFontSize = 16.5d;
         private const double MineralWorkerFontSize = 15.5d;
+        private const double GasWorkerBadgeWidth = 54d;
+        private const double GasWorkerBadgeHeight = 30d;
+        private const double MineralWorkerBadgeWidth = 56d;
+        private const double MineralWorkerBadgeHeight = 26d;
         private static readonly SolidColorBrush UnitOverlayBackground =
             FrozenBrush(Color.FromArgb(84, 9, 16, 24));
         private static readonly SolidColorBrush TransportCargoOverlayBackground =
@@ -38,6 +43,7 @@ namespace Malco.Presentation.Spatial
         private double _positionedHeight = -1d;
         private bool _positionedOriginalAspectRatio;
         private double _appliedVisualScale = double.NaN;
+        private double _resourceWorkerBadgeScale = 1d;
         private bool _contentInvalidated;
 
         public SpatialPresenter(SpatialVisualTree tree, SpatialVisualStyle style, IconLocator icons)
@@ -79,6 +85,7 @@ namespace Malco.Presentation.Spatial
             var updates = reset.Updates;
             var removes = reset.Removes;
             var frameInvalidated = reset.FrameInvalidated;
+            frameInvalidated |= UpdateResourceWorkerBadgeScale(state.Preferences);
             var canPresentContent = !state.Surface.IsEditor &&
                                     state.Snapshot != null &&
                                     state.Snapshot.IsInMatch;
@@ -243,6 +250,24 @@ namespace Malco.Presentation.Spatial
         {
             _positionedWidth = -1d;
             _positionedHeight = -1d;
+        }
+
+        private bool UpdateResourceWorkerBadgeScale(SpatialFeaturePreferences preferences)
+        {
+            var next = MalcoPreferenceValues.ResourceWorkerBadgeScale(
+                preferences.DisplayPreferences != null
+                    ? preferences.DisplayPreferences.ResourceWorkerIconSize
+                    : MalcoPreferenceValues.IconMedium);
+            if (Math.Abs(_resourceWorkerBadgeScale - next) <= 0.000001d)
+            {
+                return false;
+            }
+
+            _resourceWorkerBadgeScale = next;
+            _appliedVisualScale = double.NaN;
+            _contentRevision++;
+            InvalidateSurface();
+            return true;
         }
 
         private SpatialSlowApplyResult ClearContentCore()

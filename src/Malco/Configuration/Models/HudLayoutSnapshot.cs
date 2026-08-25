@@ -90,6 +90,7 @@ namespace Malco.Configuration.Models
             BuildingIconSize = source.GetIconSize(HudWidgetRegistry.Buildings);
             CompletedUpgradeIconSize = source.GetIconSize(HudWidgetRegistry.Upgrades);
             AvailableUpgradeIconSize = source.GetIconSize(HudWidgetRegistry.AvailableUpgrades);
+            ResourceWorkerIconSize = source.GetIconSize("resource-workers");
             WorkerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(source.WorkerCountStyle);
             ShowTransportCargo = source.ShowTransportCargo;
             _widgets = CopyWidgets(source.Widgets);
@@ -105,6 +106,7 @@ namespace Malco.Configuration.Models
         public string BuildingIconSize { get; }
         public string CompletedUpgradeIconSize { get; }
         public string AvailableUpgradeIconSize { get; }
+        public string ResourceWorkerIconSize { get; }
         public string WorkerCountStyle { get; }
         public bool ShowTransportCargo { get; }
         public IReadOnlyDictionary<string, WidgetLayoutSnapshot> Widgets { get { return _widgets; } }
@@ -128,6 +130,7 @@ namespace Malco.Configuration.Models
                 BuildingIconSize = BuildingIconSize,
                 CompletedUpgradeIconSize = CompletedUpgradeIconSize,
                 AvailableUpgradeIconSize = AvailableUpgradeIconSize,
+                ResourceWorkerIconSize = ResourceWorkerIconSize,
                 WorkerCountStyle = WorkerCountStyle,
                 ShowTransportCargo = ShowTransportCargo
             };

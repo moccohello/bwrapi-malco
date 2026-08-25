@@ -23,6 +23,10 @@ namespace Malco.Settings.Views
                 UiText.Get("Gas worker counts by refinery."),
                 FeatureSettingsPreviewKind.Gas,
                 false));
+            settings.Children.Add(BuildIconSizeSelector(
+                HudFeatureCatalog.ResourceWorkersKey,
+                "Display size",
+                "Choose the size of resource worker counts on the map."));
             return settings;
         }
 

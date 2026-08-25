@@ -111,6 +111,9 @@ namespace Malco.Configuration
             layout.AvailableUpgradeIconSize = MalcoPreferenceValues.NormalizeIconSize(
                 layout.AvailableUpgradeIconSize,
                 MalcoPreferenceValues.IconSmall);
+            layout.ResourceWorkerIconSize = MalcoPreferenceValues.NormalizeIconSize(
+                layout.ResourceWorkerIconSize,
+                MalcoPreferenceValues.IconMedium);
             if (layout.Widgets == null)
             {
                 layout.Widgets = new Dictionary<string, WidgetLayout>(StringComparer.OrdinalIgnoreCase);

@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Malco.Localization;
 using Malco.Settings.Contracts;
+using Malco.Shell.Input;
 
 namespace Malco.Settings.Views
 {
@@ -30,6 +31,7 @@ namespace Malco.Settings.Views
         private Button _temporaryHudButton;
         private TextBlock _headerTitle;
         private TextBlock _headerSubtitle;
+        private TextBlock _headerHotkey;
         private Button _arrangeButton;
         private Button _closeButton;
         private string _selectedFeatureKey = HudWidgetRegistry.Workers;
@@ -264,6 +266,7 @@ namespace Malco.Settings.Views
             AutomationProperties.SetName(Panel, UiText.Get("Malco settings"));
             _headerTitle.Text = UiText.Get("Malco");
             _headerSubtitle.Text = UiText.Get("HUD settings");
+            _headerHotkey.Text = HotkeyController.ShortcutDisplay;
             _arrangeButton.Content = UiText.Get("Arrange HUD");
             AutomationProperties.SetName(_arrangeButton, UiText.Get("Arrange HUD"));
             _closeButton.ToolTip = UiText.Get("Return to Game");
@@ -310,8 +313,18 @@ namespace Malco.Settings.Views
             };
             _headerTitle = _palette.Text(UiText.Get("Malco"), 20d, FontWeights.Bold, _palette.TextBrush);
             _headerSubtitle = _palette.Text(UiText.Get("HUD settings"), 12d, FontWeights.SemiBold, _palette.MutedBrush);
+            _headerHotkey = _palette.Text(HotkeyController.ShortcutDisplay, 11d, FontWeights.Normal, _palette.MutedBrush);
+            _headerHotkey.Margin = new Thickness(10d, 1d, 0d, 0d);
+            _headerHotkey.Opacity = 0.85;
+            AutomationProperties.SetName(_headerHotkey, HotkeyController.ShortcutDisplay);
+            var meta = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+            meta.Children.Add(_headerSubtitle);
+            meta.Children.Add(_headerHotkey);
             identity.Children.Add(_headerTitle);
-            identity.Children.Add(_headerSubtitle);
+            identity.Children.Add(meta);
             header.Children.Add(identity);
 
             SaveStatus.Margin = new Thickness(12d, 0d, 16d, 0d);

@@ -142,13 +142,21 @@ namespace Malco.Settings.Views
 
         private FrameworkElement BuildIconSizeSelector(string featureKey)
         {
+            return BuildIconSizeSelector(
+                featureKey,
+                "Icon size",
+                "Choose the icon size for this display.");
+        }
+
+        private FrameworkElement BuildIconSizeSelector(string featureKey, string titleKey, string descriptionKey)
+        {
             var row = new Grid { Margin = new Thickness(0d, 20d, 0d, 0d) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1d, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var copy = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            copy.Children.Add(_palette.Text(UiText.Get("Icon size"), 14d, FontWeights.SemiBold, _palette.TextBrush));
+            copy.Children.Add(_palette.Text(UiText.Get(titleKey), 14d, FontWeights.SemiBold, _palette.TextBrush));
             copy.Children.Add(_palette.Text(
-                UiText.Get("Choose the icon size for this display."),
+                UiText.Get(descriptionKey),
                 12d,
                 FontWeights.Normal,
                 _palette.MutedBrush));
@@ -203,6 +211,10 @@ namespace Malco.Settings.Views
                     return;
                 }
                 _actions.RefreshPresenterViews();
+                if (string.Equals(featureKey, HudFeatureCatalog.ResourceWorkersKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    _actions.RefreshSpatialPresentation();
+                }
                 RenderDetail();
                 RestoreFocusAfterRender(label);
             };
