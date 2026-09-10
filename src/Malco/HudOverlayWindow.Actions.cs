@@ -22,7 +22,6 @@ namespace Malco
         {
             if (enabled)
             {
-                // 설정 전용 소형 창을 편집 크기로 확장하기 전에 버튼을 숨긴다.
                 _settingsButton.Visibility = Visibility.Collapsed;
             }
             _editorMode = enabled;
@@ -85,6 +84,16 @@ namespace Malco
             _layoutEditorView.FocusPrimaryControl();
         }
 
+        private void ActivateEditorSurface()
+        {
+            if (!_editorMode || !_overlayPresentationVisible) return;
+            UpdateLayout();
+            Activate();
+            Focus();
+            FocusActiveEditorNavigation();
+            _shellController.RefreshEditorEscapeHotkey();
+        }
+
         private void ToggleEditorMode()
         {
             if (_editorMode && !SaveLayoutIfNeeded())
@@ -98,9 +107,7 @@ namespace Malco
             _sceneViewController.UpdatePresentationClockArming();
             if (_editorMode)
             {
-                Activate();
-                Focus();
-                FocusActiveEditorNavigation();
+                ActivateEditorSurface();
             }
             else
             {
@@ -113,17 +120,14 @@ namespace Malco
             ApplyEditorMode(true);
             _shellController.RefreshRuntimeMode();
             _runtimeHost.MarkCurrentStateCommitted();
-            Activate();
-            Focus();
-            FocusActiveEditorNavigation();
+            ActivateEditorSurface();
         }
 
         private void OpenEditorPage(SettingsPage page)
         {
             if (_editorMode)
             {
-                Activate();
-                Focus();
+                ActivateEditorSurface();
                 _layoutEditorView.SelectEditorTab(page);
                 return;
             }
@@ -258,8 +262,9 @@ namespace Malco
         }
         void IOverlayShellViewPort.PositionSettingsButtonAtOrigin()
         {
-            Canvas.SetLeft(_settingsButton, 0d);
-            Canvas.SetTop(_settingsButton, 0d);
+            var inset = Width >= 200d && Height >= 80d ? 12d : 0d;
+            Canvas.SetLeft(_settingsButton, inset);
+            Canvas.SetTop(_settingsButton, inset);
         }
 
         bool ISettingsShellPort.EditorMode { get { return _editorMode; } }

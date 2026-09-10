@@ -37,18 +37,18 @@ namespace Malco.Shell
             if (Interlocked.Exchange(ref _foregroundDirty, 0) != 0) _lastForegroundRoot = IntPtr.Zero;
 
             if (!TrackStarCraftWindow() || _settings.ShutdownRequested) return;
+            var trackedHandle = _targetWindow != null ? _targetWindow.Handle : IntPtr.Zero;
             if (_objectWinEventHook == IntPtr.Zero && _targetWindow != null)
                 Interlocked.Exchange(ref _geometryDirty, 1);
             var targetUsable = HasUsableTargetWindow();
             var targetUsabilityChanged = targetUsable != _lastWatchdogTargetUsable;
+            var targetHandleChanged = trackedHandle != _lastWatchdogTargetHandle;
             _lastWatchdogTargetUsable = targetUsable;
-            if (targetUsabilityChanged && targetUsable) Interlocked.Exchange(ref _geometryDirty, 1);
-            if (targetUsabilityChanged) _framePump.RequestFrame();
+            _lastWatchdogTargetHandle = trackedHandle;
+            if ((targetUsabilityChanged && targetUsable) || targetHandleChanged)
+                Interlocked.Exchange(ref _geometryDirty, 1);
+            if (targetUsabilityChanged || targetHandleChanged) _framePump.RequestFrame();
             RefreshRuntimeMode();
-            if (targetUsabilityChanged && !targetUsable &&
-                (CurrentMode == OverlayRuntimeMode.Editor || CurrentMode == OverlayRuntimeMode.SettingsOnly))
-                ApplyRuntimeWindowBounds(CurrentMode);
-            ApplyWindowStacking();
         }
 
         private void OnDisplaySettingsChanged()

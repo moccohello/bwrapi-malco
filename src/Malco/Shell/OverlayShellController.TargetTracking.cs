@@ -20,28 +20,34 @@ namespace Malco.Shell
                 (_targetWindow.Handle == IntPtr.Zero || !NativeMethods.IsWindow(_targetWindow.Handle)))
             {
                 _windowTracker.Invalidate();
-                ResetTrackedWindow("StarCraft closed");
+                if (!_hasTrackedProcess || HasTrackedProcessExited())
+                {
+                    ResetTrackedWindow("StarCraft closed");
+                    if (_settings.ShutdownRequested) return false;
+                }
+                else
+                {
+                    _targetWindow = null;
+                    Interlocked.Exchange(ref _eventTargetHandle, IntPtr.Zero);
+                    Volatile.Write(ref _eventTargetProcessId, 0);
+                    _hasAppliedTargetBounds = false;
+                }
             }
             GameWindowInfo target;
             if (_windowTracker.TryGetCachedWindow(out target))
             {
                 return SetTrackedTarget(target);
             }
-            if (_targetWindow != null)
-            {
-                if (_windowTracker.HasCachedIdentity) return true;
-                ResetTrackedWindow("StarCraft closed");
-            }
             var now = Stopwatch.GetTimestamp();
             if (now < _nextTargetAcquisitionTimestamp)
             {
-                _settings.SetShellStatus("StarCraft window not found");
+                if (!_hasTrackedProcess) _settings.SetShellStatus("StarCraft window not found");
                 return true;
             }
             _nextTargetAcquisitionTimestamp = now + Stopwatch.Frequency;
             if (!_windowTracker.TryAcquireWindow(out target))
             {
-                _settings.SetShellStatus("StarCraft window not found");
+                if (!_hasTrackedProcess) _settings.SetShellStatus("StarCraft window not found");
                 return true;
             }
             return SetTrackedTarget(target);
@@ -64,7 +70,6 @@ namespace Malco.Shell
                                     _targetWindow.Bounds.Width != target.Bounds.Width ||
                                     _targetWindow.Bounds.Height != target.Bounds.Height;
             _targetWindow = target;
-            CaptureLastKnownWorkArea(target);
             if (!_hasTrackedProcess)
             {
                 _hasTrackedProcess = true;

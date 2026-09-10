@@ -152,7 +152,9 @@ namespace Malco.Bootstrap
             var projectionCommitSubscription = new ProjectionCommitSubscription(coordinator, framePump);
             _projectionCommitSubscription = projectionCommitSubscription;
             Capture(projectionCommitSubscription);
-            var hotkey = new HotkeyController(window.ToggleSettingsFromShell);
+            var hotkey = new HotkeyController(
+                window.ToggleSettingsFromShell,
+                window.CloseSettingsFromShell);
             Capture(hotkey);
             var tray = new TrayController(window.Dispatcher, window);
             Capture(tray);

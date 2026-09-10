@@ -53,6 +53,12 @@ namespace Malco.Shell
         private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (_settings.ShutdownRequested) return IntPtr.Zero;
+            if (message == NativeMethods.WmMouseActivate && !IsEditorSurfacePresented())
+            {
+                handled = true;
+                return new IntPtr(NativeMethods.MaNoActivate);
+            }
+            if (message == NativeMethods.WmActivate) SyncEditorEscapeHotkey();
             if (_hotkey.TryHandleWindowMessage(hwnd, message, wParam, lParam)) handled = true;
             else if (message == WmShellWake) { DrainShellWake(); handled = true; }
             return IntPtr.Zero;
@@ -69,14 +75,15 @@ namespace Malco.Shell
                 Interlocked.Exchange(ref _wakeQueued, 0);
                 if (Volatile.Read(ref _dirtyMask) == 0 || Interlocked.CompareExchange(ref _wakeQueued, 1, 0) != 0) break;
             }
-            if (Interlocked.Exchange(ref _validityDirty, 0) != 0)
+            var validity = Interlocked.Exchange(ref _validityDirty, 0) != 0;
+            var foreground = Interlocked.Exchange(ref _foregroundDirty, 0) != 0;
+            if (validity)
             {
                 if (!TrackStarCraftWindow() || _settings.ShutdownRequested) return;
                 RefreshRuntimeMode();
-                if (CurrentMode == OverlayRuntimeMode.Editor || CurrentMode == OverlayRuntimeMode.SettingsOnly)
-                    ApplyRuntimeWindowBounds(CurrentMode);
-                ApplyWindowStacking();
+                return;
             }
+            if (foreground) ApplyWindowStacking();
         }
     }
 }

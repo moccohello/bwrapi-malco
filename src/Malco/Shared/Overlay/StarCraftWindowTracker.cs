@@ -109,10 +109,9 @@ namespace Malco.Overlay
 
             if (!NativeMethods.IsWindowVisible(_lastResolved.Handle))
             {
-                // A process may keep an old hidden HWND alive while creating a
-                // replacement. Drop only the window cache; the pinned PID/start
-                // identity remains and constrains the next enumeration.
-                Invalidate();
+                // Alt+Tab, DWM, or minimize can hide the HWND without replacing
+                // it. Keep the pinned identity so a transient hide does not look
+                // like StarCraft closed.
                 return false;
             }
 

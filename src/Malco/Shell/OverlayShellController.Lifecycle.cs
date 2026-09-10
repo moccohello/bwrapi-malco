@@ -49,7 +49,7 @@ namespace Malco.Shell
                 _settings.SetShellHelpText(registration.Message);
                 _settings.ReportHotkeyUnavailable();
             }
-            SetInputMode(_settings.EditorMode || CurrentMode == OverlayRuntimeMode.SettingsOnly);
+            ApplyInputStyle();
             Interlocked.Exchange(ref _geometryDirty, 1);
             TrackStarCraftWindow();
             if (_settings.ShutdownRequested) return;

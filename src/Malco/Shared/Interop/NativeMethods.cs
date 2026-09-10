@@ -34,12 +34,19 @@ namespace Malco.Interop
         public static readonly IntPtr HwndNoTopMost = new IntPtr(-2);
         public static readonly IntPtr HwndTop = new IntPtr(0);
         public static readonly IntPtr HwndBottom = new IntPtr(1);
-        public const int GwlpHwndParent = -8;
         public const int GwlExStyle = -20;
+        public const int WmActivate = 0x0006;
+        public const int WmMouseActivate = 0x0021;
+        public const int MaNoActivate = 3;
+        public const int SwShowNoActivate = 8;
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetWinEventHook(
@@ -146,9 +153,6 @@ namespace Malco.Interop
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
-        public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct Rect { public int Left; public int Top; public int Right; public int Bottom; }

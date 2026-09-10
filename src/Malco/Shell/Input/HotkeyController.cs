@@ -21,22 +21,29 @@ namespace Malco.Shell.Input
     {
         internal const int WmHotKey = 0x0312;
         internal const int ToggleEditorHotKeyId = 0x53C1;
+        internal const int CloseEditorHotKeyId = 0x53C2;
         internal const uint F8VirtualKey = 0x77;
+        internal const uint EscapeVirtualKey = 0x1B;
         internal const uint CtrlShiftModifiers = 0x0002u | 0x0004u;
+        internal const uint ModNoRepeat = 0x4000u;
         internal const string ShortcutDisplay = "Ctrl+Shift+F8";
         internal const string RegistrationFailureMessage =
             ShortcutDisplay + " could not be registered. Open Settings from the tray icon.";
 
         private readonly Action _toggleEditorIntent;
+        private readonly Action _closeEditorIntent;
         private IntPtr _registeredWindow;
-        private int _registered;
+        private int _toggleRegistered;
+        private int _escapeArmed;
         private int _disposed;
         private HotkeyRegistrationResult _registrationResult;
 
-        public HotkeyController(Action toggleEditorIntent)
+        public HotkeyController(Action toggleEditorIntent, Action closeEditorIntent)
         {
             _toggleEditorIntent = toggleEditorIntent ??
                                   throw new ArgumentNullException(nameof(toggleEditorIntent));
+            _closeEditorIntent = closeEditorIntent ??
+                                 throw new ArgumentNullException(nameof(closeEditorIntent));
         }
 
         public HotkeyRegistrationResult RegistrationResult => _registrationResult;
@@ -51,7 +58,7 @@ namespace Malco.Shell.Input
             {
                 throw new ArgumentException("A valid window handle is required.", nameof(windowHandle));
             }
-            if (Volatile.Read(ref _registered) != 0)
+            if (_registeredWindow != IntPtr.Zero)
             {
                 if (_registeredWindow != windowHandle)
                 {
@@ -61,6 +68,7 @@ namespace Malco.Shell.Input
                 return _registrationResult;
             }
 
+            _registeredWindow = windowHandle;
             var registered = NativeMethods.RegisterHotKey(
                 windowHandle,
                 ToggleEditorHotKeyId,
@@ -68,14 +76,36 @@ namespace Malco.Shell.Input
                 F8VirtualKey);
             if (registered)
             {
-                _registeredWindow = windowHandle;
-                Volatile.Write(ref _registered, 1);
+                Volatile.Write(ref _toggleRegistered, 1);
             }
 
             _registrationResult = new HotkeyRegistrationResult(
                 registered,
                 registered ? string.Empty : RegistrationFailureMessage);
             return _registrationResult;
+        }
+
+        public void SetEditorEscapeArmed(bool armed)
+        {
+            if (IsDisposed || _registeredWindow == IntPtr.Zero) return;
+            var currentlyArmed = Volatile.Read(ref _escapeArmed) != 0;
+            if (armed == currentlyArmed) return;
+            if (armed)
+            {
+                if (!NativeMethods.RegisterHotKey(
+                    _registeredWindow,
+                    CloseEditorHotKeyId,
+                    ModNoRepeat,
+                    EscapeVirtualKey))
+                {
+                    return;
+                }
+                Volatile.Write(ref _escapeArmed, 1);
+                return;
+            }
+
+            Volatile.Write(ref _escapeArmed, 0);
+            NativeMethods.UnregisterHotKey(_registeredWindow, CloseEditorHotKeyId);
         }
 
         public bool TryHandleWindowMessage(
@@ -85,16 +115,26 @@ namespace Malco.Shell.Input
             IntPtr lParam)
         {
             if (IsDisposed ||
-                Volatile.Read(ref _registered) == 0 ||
+                _registeredWindow == IntPtr.Zero ||
                 windowHandle != _registeredWindow ||
-                message != WmHotKey ||
-                wParam.ToInt64() != ToggleEditorHotKeyId)
+                message != WmHotKey)
             {
                 return false;
             }
 
-            _toggleEditorIntent();
-            return true;
+            var id = wParam.ToInt64();
+            if (id == ToggleEditorHotKeyId)
+            {
+                _toggleEditorIntent();
+                return true;
+            }
+            if (id == CloseEditorHotKeyId)
+            {
+                if (Volatile.Read(ref _escapeArmed) == 0) return true;
+                _closeEditorIntent();
+                return true;
+            }
+            return false;
         }
 
         public void Dispose()
@@ -104,9 +144,16 @@ namespace Malco.Shell.Input
                 return;
             }
 
-            if (Interlocked.Exchange(ref _registered, 0) != 0)
+            if (_registeredWindow != IntPtr.Zero)
             {
-                NativeMethods.UnregisterHotKey(_registeredWindow, ToggleEditorHotKeyId);
+                if (Interlocked.Exchange(ref _toggleRegistered, 0) != 0)
+                {
+                    NativeMethods.UnregisterHotKey(_registeredWindow, ToggleEditorHotKeyId);
+                }
+                if (Interlocked.Exchange(ref _escapeArmed, 0) != 0)
+                {
+                    NativeMethods.UnregisterHotKey(_registeredWindow, CloseEditorHotKeyId);
+                }
                 _registeredWindow = IntPtr.Zero;
             }
         }

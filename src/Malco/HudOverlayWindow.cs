@@ -295,6 +295,11 @@ namespace Malco
             HandleSettingsIntent(new SettingsIntent(SettingsIntentKind.ToggleEditor));
         }
 
+        internal void CloseSettingsFromShell()
+        {
+            HandleSettingsIntent(new SettingsIntent(SettingsIntentKind.ReturnToGame));
+        }
+
         internal void ApplyCompositionFrame()
         {
             OnRendering(null, EventArgs.Empty);

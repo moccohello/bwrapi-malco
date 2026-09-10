@@ -60,18 +60,15 @@ namespace Malco.Shell
         private int _geometryDirty;
         private int _validityDirty;
         private int _foregroundDirty;
-        private int _appliedExtendedStyle = int.MinValue;
         private bool _frameChangePending;
         private bool _hasAppliedTargetBounds;
         private Rectangle _lastAppliedTargetDeviceBounds;
         private uint _lastAppliedTargetDpi;
         private IntPtr _lastAppliedTargetMonitor;
-        private OverlayRuntimeMode _lastAppliedBoundsMode;
         private bool _lastWatchdogTargetUsable;
+        private IntPtr _lastWatchdogTargetHandle;
         private bool _hasAppliedRuntimeMode;
         private bool _runtimeHooksDetached;
-        private bool _hasLastKnownWorkArea;
-        private Rect _lastKnownWorkAreaDip;
         private bool _disposed;
 
         public OverlayShellController(
@@ -116,11 +113,12 @@ namespace Malco.Shell
 
         public void ApplyPendingTargetGeometry()
         {
-            if (Interlocked.Exchange(ref _geometryDirty, 0) == 0 || _targetWindow == null) return;
+            if (Volatile.Read(ref _geometryDirty) == 0 || _targetWindow == null) return;
             GameWindowInfo refreshed;
             if (!_windowTracker.TryRefreshGeometry(out refreshed)) return;
             if (!SetTrackedTarget(refreshed) || _settings.ShutdownRequested) return;
-            ApplyRuntimeWindowBounds(CurrentMode);
+            Interlocked.Exchange(ref _geometryDirty, 0);
+            ApplyGameClientBounds(CurrentMode);
         }
 
         public void ActivateTargetIfAvailable()
@@ -128,13 +126,20 @@ namespace Malco.Shell
             if (HasUsableTargetWindow()) NativeMethods.SetForegroundWindow(_targetWindow.Handle);
         }
 
+        public void RefreshEditorEscapeHotkey()
+        {
+            SyncEditorEscapeHotkey();
+        }
+
         private void ApplyRuntimeMode(OverlayRuntimeMode mode, bool force)
         {
-            if (!force && _hasAppliedRuntimeMode && CurrentMode == mode) return;
+            var modeChanged = force || !_hasAppliedRuntimeMode || CurrentMode != mode;
             CurrentMode = mode;
             _hasAppliedRuntimeMode = true;
-            ApplyRuntimeWindowBounds(mode);
-            _presentation.ApplyRuntimeVisualState(mode, OriginalAspectRatio);
+            if (modeChanged)
+            {
+                _presentation.ApplyRuntimeVisualState(mode, OriginalAspectRatio);
+            }
             ApplyWindowStacking();
         }
     }
