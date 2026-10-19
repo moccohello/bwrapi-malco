@@ -31,6 +31,18 @@ namespace Malco.Data
             }
 
             long generation = checked((long)source.SessionGeneration);
+            if (source.Session?.GameReady == true &&
+                source.UnitsAvailable != true &&
+                IsCurrentSemanticSession(sessionEpoch, generation))
+            {
+                // ABI8 separates a missing unit list from a known-empty one.
+                // Keep the last observed values and only mark collection waiting.
+                PublishSemanticFailure(
+                    "Embedded observer unit list is unavailable",
+                    ProviderStatus.NotReady);
+                return;
+            }
+
             lock (_gate)
             {
                 if (IsClosing || _terminalPublication) return;
@@ -111,6 +123,16 @@ namespace Malco.Data
             commitSink?.MarkProviderCommit(commitMask);
         }
 
+        private bool IsCurrentSemanticSession(string sessionEpoch, long generation)
+        {
+            lock (_gate)
+            {
+                return string.Equals(_semanticEpoch, sessionEpoch, StringComparison.Ordinal) &&
+                       _semanticGeneration == generation &&
+                       Volatile.Read(ref _channels).Semantic?.Snapshot != null;
+            }
+        }
+
         private void ResetSemanticSessionState()
         {
             _snapshotMapper.ResetSessionState();
@@ -133,6 +155,10 @@ namespace Malco.Data
             if (source.Status == BwrApiSemanticSnapshotStatus.Unavailable)
                 return ProviderStatus.NotReady;
             if (!runtime.IsInMatch || runtime.PerspectivePlayerId < 0)
+                return ProviderStatus.NotReady;
+            // ABI8 distinguishes a known-empty unit list from a missing one.
+            // A missing list must not publish zero units over the last values.
+            if (source.UnitsAvailable != true)
                 return ProviderStatus.NotReady;
             if (runtime.Race == Race.Unknown ||
                 !runtime.HasReliableUpgradeState)

@@ -101,9 +101,9 @@ namespace Malco.Data
 
         public bool IsWorker { get; set; }
 
-        public bool IsSelected { get; set; }
+        public bool? IsSelected { get; set; }
 
-        public bool IsHallucination { get; set; }
+        public bool? IsHallucination { get; set; }
 
         public int MapX { get; set; }
 
@@ -111,7 +111,7 @@ namespace Malco.Data
 
         public int OrderId { get; set; }
 
-        public bool HasOrderTarget { get; set; }
+        public bool? HasOrderTarget { get; set; }
 
         public int OrderTargetMapX { get; set; }
 

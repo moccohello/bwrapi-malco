@@ -23,7 +23,7 @@ namespace Malco.ContractTests
         {
             var sdkAssembly = typeof(BwrApiSemanticUnitV1).Assembly;
             Assert.Equal(
-                "5.0.0-embedded-preview.78-larva.3",
+                "8.0.0-embedded-preview.6",
                 sdkAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
             Assert.Equal(typeof(uint?), typeof(BwrApiSemanticUnitV1).GetProperty("RemainingTrainFrames").PropertyType);
             Assert.Equal(typeof(bool?), typeof(BwrApiSemanticUnitV1).GetProperty("HasHatcheryParent").PropertyType);
@@ -109,6 +109,21 @@ namespace Malco.ContractTests
             Assert.Equal(baseline, Key(24, 2));
             Assert.NotEqual(baseline, Key(23, 2));
             Assert.NotEqual(baseline, Key(24, 1));
+        }
+
+        [Fact]
+        public void UnknownLarvaHallucinationKeepsConnectedCountUnknown()
+        {
+            // ABI8 reports hallucination as tri-state; an unknown larva may be
+            // a real connected larva, so the count must not become a number.
+            var projected = Project(
+                Unit(131, "hatchery", remainingTrainFrames: 30),
+                Unit(35, "known-larva", hasHatcheryParent: true, hatcheryUnitTag: "hatchery"),
+                Unit(35, "uncertain-larva", isHallucination: null, hasHatcheryParent: true, hatcheryUnitTag: "hatchery"));
+
+            var state = projected.SpatialStates.Single(item => item.UnitTag == "hatchery");
+            Assert.Equal((uint?)30, state.LarvaRemainingFrames);
+            Assert.Null(state.ConnectedLarvaCount);
         }
 
         [Fact]
@@ -349,7 +364,7 @@ namespace Malco.ContractTests
             byte ownerId = 0,
             int hitPointsRaw = 25600,
             bool? isCompleted = true,
-            bool isHallucination = false,
+            bool? isHallucination = false,
             uint? remainingTrainFrames = null,
             bool? hasHatcheryParent = null,
             string hatcheryUnitTag = null)

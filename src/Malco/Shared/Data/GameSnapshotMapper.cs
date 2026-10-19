@@ -41,7 +41,7 @@ namespace Malco.Data
                 .Where(unit => !BwapiBroodWarTables.IsAuxiliarySubunit(unit.UnitId))
                 .ToList();
             var countableUnits = displayUnits
-                .Where(unit => !unit.IsHallucination)
+                .Where(unit => unit.IsHallucination != true)
                 .ToList();
             var race = runtime.Race;
             var capturedAt = runtime.CapturedAt == default(DateTime) ? DateTime.Now : runtime.CapturedAt;

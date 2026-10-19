@@ -63,6 +63,15 @@ namespace Malco.Data
                     "Embedded observer is waiting for a semantic frame",
                     ProviderStatus.NotReady);
             }
+            catch (BwrApiNativeCallException exception)
+                when (exception.Result == BwrApiResultCode.SourceUnavailable)
+            {
+                // ABI8 reports a transient missing game source as code 4.
+                // Keep the last values and wait instead of showing an error.
+                _publication.PublishSemanticFailure(
+                    "Embedded observer is waiting for the game source",
+                    ProviderStatus.NotReady);
+            }
             catch (BwrApiNativeCancelledException) when (token.IsCancellationRequested)
             {
                 throw new OperationCanceledException(token);

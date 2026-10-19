@@ -33,7 +33,7 @@ namespace Malco.Data
                          !string.IsNullOrWhiteSpace(unit.UnitTag)))
             {
                 if (unit.HitPointsRaw <= 0 ||
-                    unit.IsHallucination ||
+                    unit.IsHallucination == true ||
                     unit.IsLoaded == false)
                 {
                     _cargoAssignments.Remove(unit.UnitTag);
@@ -85,7 +85,7 @@ namespace Malco.Data
 
             var result = new List<UnitSpatialState>();
             foreach (var unit in units.Where(unit =>
-                         !unit.IsHallucination &&
+                         unit.IsHallucination != true &&
                          string.IsNullOrWhiteSpace(unit.TransportUnitTag)))
             {
                 List<CargoUnitCount> cargo = null;
@@ -156,7 +156,7 @@ namespace Malco.Data
                     unit != null &&
                     unit.HitPointsRaw > 0 &&
                     unit.IsCompleted &&
-                    !unit.IsHallucination &&
+                    unit.IsHallucination != true &&
                     !string.IsNullOrWhiteSpace(unit.UnitTag))
                 .Select(unit => unit.UnitTag)
                 .ToHashSet(StringComparer.Ordinal);
@@ -165,7 +165,7 @@ namespace Malco.Data
                     unit != null &&
                     unit.HitPointsRaw > 0 &&
                     unit.IsCompleted &&
-                    !unit.IsHallucination &&
+                    unit.IsHallucination != true &&
                     !string.IsNullOrWhiteSpace(unit.UnitTag))
                 .GroupBy(unit => unit.UnitId)
                 .ToDictionary(

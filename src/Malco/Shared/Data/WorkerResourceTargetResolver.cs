@@ -151,7 +151,7 @@ namespace Malco.Data
         private static Tuple<int, int> ResolveOrderTargetOrCurrentPosition(
             BwrApiRuntimeUnit unit)
         {
-            return unit.HasOrderTarget
+            return unit.HasOrderTarget == true
                 ? Tuple.Create(unit.OrderTargetMapX, unit.OrderTargetMapY)
                 : RuntimeUnitCoordinates.Resolve(unit);
         }

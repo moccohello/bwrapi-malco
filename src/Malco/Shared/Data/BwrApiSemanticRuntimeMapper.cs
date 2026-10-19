@@ -42,7 +42,7 @@ namespace Malco.Data
 
             var larvaByOwner = source.Units
                 .Where(unit => unit.UnitTypeId == 35 &&
-                    unit.HitPointsRaw > 0 && !unit.IsHallucination)
+                    unit.HitPointsRaw > 0 && unit.IsHallucination != true)
                 .ToLookup(unit => unit.OwnerId);
 
             foreach (BwrApiSemanticUnitV1 unit in source.Units)
@@ -145,7 +145,10 @@ namespace Malco.Data
             int count = 0;
             foreach (var larva in larvae)
             {
-                if (!larva.HasHatcheryParent.HasValue ||
+                // ABI8 reports hallucination as tri-state. An unknown larva
+                // could be a real connected larva, so the count is unknown.
+                if (!larva.IsHallucination.HasValue ||
+                    !larva.HasHatcheryParent.HasValue ||
                     (larva.HasHatcheryParent == true &&
                      string.IsNullOrWhiteSpace(larva.HatcheryUnitTag)))
                 {
@@ -176,7 +179,7 @@ namespace Malco.Data
                 .Select(player => (int)player.PlayerId)
                 .ToHashSet();
             int[] selectedOwnerIds = source.Units
-                .Where(unit => unit.IsSelected && participantIds.Contains(unit.OwnerId))
+                .Where(unit => unit.IsSelected == true && participantIds.Contains(unit.OwnerId))
                 .Select(unit => (int)unit.OwnerId)
                 .Distinct()
                 .ToArray();

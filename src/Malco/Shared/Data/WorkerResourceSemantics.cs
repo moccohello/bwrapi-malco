@@ -18,7 +18,7 @@ namespace Malco.Data
         public static bool HasResourceTarget(BwrApiRuntimeUnit worker)
         {
             return worker != null &&
-                   worker.HasOrderTarget &&
+                   worker.HasOrderTarget == true &&
                    WorkerResourceGeometry.IsNonZeroPosition(Tuple.Create(
                        worker.OrderTargetMapX,
                        worker.OrderTargetMapY));

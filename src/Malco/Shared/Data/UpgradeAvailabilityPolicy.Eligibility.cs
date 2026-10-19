@@ -116,7 +116,7 @@ namespace Malco.Data
             const int researchTechOrder = 75;
             const int upgradeOrder = 76;
             var units = localUnits.Where(unit => unit.IsCompleted && unit.IsBuilding &&
-                !unit.IsHallucination && !RuntimeUnitSemantics.IsLiftedBuilding(unit)).ToList();
+                unit.IsHallucination != true && !RuntimeUnitSemantics.IsLiftedBuilding(unit)).ToList();
             var producerTypes = new HashSet<int>(GetProducerGroup(rule));
             return units.Any(producer => producerTypes.Contains(producer.UnitId) &&
                 producer.IsResearching == false && producer.IsUpgrading == false &&

@@ -159,6 +159,24 @@ namespace Malco.ContractTests
             Assert.Equal(ProviderStatus.Ready, coordinator.GetProviderChannelState().Semantic.Status);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(null)]
+        public void MissingUnitListIsNeverPublishedAsReadyEmptyUnits(bool? unitsAvailable)
+        {
+            var coordinator = new ProviderPublicationCoordinator(new EmbeddedObserverMetrics());
+            coordinator.PublishSemanticObservation(Header(), Source(Race.Terran, new[] { Unit(112, "academy") }));
+            var ready = coordinator.GetProviderChannelState().Semantic;
+            Assert.Equal(ProviderStatus.Ready, ready.Status);
+
+            coordinator.PublishSemanticObservation(
+                Header(),
+                Source(Race.Terran, Array.Empty<BwrApiSemanticUnitV1>(), unitsAvailable: unitsAvailable));
+            var missing = coordinator.GetProviderChannelState().Semantic;
+            Assert.Equal(ProviderStatus.NotReady, missing.Status);
+            Assert.Same(ready.Snapshot, missing.Snapshot);
+        }
+
         private static GameSnapshot Snapshot(BwrApiRuntimeSnapshot runtime) =>
             new GameSnapshotMapper().BuildSemanticSnapshot(runtime, string.Empty);
 
@@ -169,10 +187,11 @@ namespace Malco.ContractTests
             Race race,
             BwrApiSemanticUnitV1[] units,
             BwrApiSemanticUpgradeV1[] upgrades = null,
-            BwrApiSemanticTechV1[] techs = null)
+            BwrApiSemanticTechV1[] techs = null,
+            bool? unitsAvailable = true)
         {
             byte raceId = race == Race.Terran ? (byte)1 : race == Race.Protoss ? (byte)2 : (byte)0;
-            return (BwrApiSemanticSnapshotV1)typeof(BwrApiSemanticSnapshotV1)
+            var source = (BwrApiSemanticSnapshotV1)typeof(BwrApiSemanticSnapshotV1)
                 .GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single()
                 .Invoke(new object[] { "test", "availability-test", 1UL, 10U,
                     BwrApiSemanticSnapshotStatus.Complete,
@@ -183,6 +202,10 @@ namespace Malco.ContractTests
                     upgrades ?? Array.Empty<BwrApiSemanticUpgradeV1>(),
                     techs ?? Array.Empty<BwrApiSemanticTechV1>(), true, string.Empty,
                     null, null, null });
+            // ABI8 publishes unit-list availability separately from Status.
+            typeof(BwrApiSemanticSnapshotV1).GetProperty(nameof(BwrApiSemanticSnapshotV1.UnitsAvailable))
+                .SetValue(source, unitsAvailable);
+            return source;
         }
 
         private static BwrApiSemanticUnitV1 Unit(

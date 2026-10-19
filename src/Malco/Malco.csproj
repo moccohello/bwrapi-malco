@@ -27,7 +27,7 @@
     <ApplicationIcon>assets\overlay-mutalisk.ico</ApplicationIcon>
     <!-- The embedded SDK package comes from the local BWRAPI package feed and
          stages its exact product-local runtime. -->
-    <BwrApiClientVersion>5.0.0-embedded-preview.78-larva.3</BwrApiClientVersion>
+    <BwrApiClientVersion>8.0.0-embedded-preview.6</BwrApiClientVersion>
   </PropertyGroup>
 
   <ItemGroup>
