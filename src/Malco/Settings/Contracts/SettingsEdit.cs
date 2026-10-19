@@ -17,6 +17,8 @@ namespace Malco.Settings.Contracts
         SetWorkerCountStyle,
         SetAbilityDisplayMode,
         SetTransportCargoVisible,
+        SetLarvaCountdownVisible,
+        SetMorphTargetIconsVisible,
         ResetWidgetBounds,
         ResetAllWidgetBounds
     }
@@ -217,6 +219,16 @@ namespace Malco.Settings.Contracts
         public static SettingsEdit SetTransportCargoVisible(bool visible)
         {
             return new SettingsEdit(SettingsEditKind.SetTransportCargoVisible, "transport-cargo", visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetLarvaCountdownVisible(bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetLarvaCountdownVisible, "larva-countdown", visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetMorphTargetIconsVisible(bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetMorphTargetIconsVisible, "morph-target-icons", visible, string.Empty, 0, default);
         }
 
         public static SettingsEdit ResetWidgetBounds(string key)

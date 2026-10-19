@@ -21,14 +21,12 @@ namespace Malco.Launcher
         public int MaximumArchiveEntries { get; set; }
         public int FeedTimeoutMilliseconds { get; set; }
         public int ArchiveTimeoutMilliseconds { get; set; }
-        public int LauncherCoordinationTimeoutMilliseconds { get; set; }
         public int StartupTimeoutMilliseconds { get; set; }
         public int AuthorizationTimeoutMilliseconds { get; set; }
         public int TerminationTimeoutMilliseconds { get; set; }
         public int StartupPollMilliseconds { get; set; }
         public int AuthorizationPollMilliseconds { get; set; }
         public int SelectedReleaseStabilityMilliseconds { get; set; }
-        public int RetainedStagedUpdateCount { get; set; }
     }
 
     internal sealed class VerifiedEnvelope
@@ -140,14 +138,19 @@ namespace Malco.Launcher
 
     internal sealed class RollbackRecord
     {
-        public RollbackRecord(ReleaseReference from, ReleaseReference to)
+        public RollbackRecord(
+            ReleaseReference from,
+            ReleaseReference to,
+            UpdateRequirement? updateRequirement = null)
         {
             From = from;
             To = to;
+            UpdateRequirement = updateRequirement;
         }
 
         public ReleaseReference From { get; }
         public ReleaseReference To { get; }
+        public UpdateRequirement? UpdateRequirement { get; }
     }
 
     internal sealed class InstallState

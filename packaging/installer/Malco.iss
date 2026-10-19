@@ -127,7 +127,8 @@ WizardStyle=modern
 SetupLogging=yes
 [Files]
 Source: "{#PreparedRoot}\*"; DestDir: "{app}"; Excludes: "data\*,state\*,cache\*,staging\*"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PreparedRoot}\state\install-state.json"; DestDir: "{app}\state"; Flags: ignoreversion
+Source: "{#PreparedRoot}\state\install-state.json"; DestDir: "{app}\state"; Flags: onlyifdoesntexist; Check: CanInstallInitialState()
+Source: "{#PreparedRoot}\state\staged-update.json"; DestDir: "{app}\state"; Flags: onlyifdoesntexist; Check: CanInstallStagedUpdate()
 Source: "{#NetCoreCheckExe}"; DestDir: "{tmp}"; DestName: "NetCoreCheck.exe"; Flags: dontcopy
 
 [Dirs]
@@ -180,6 +181,18 @@ const
 
 var
   RuntimeRestartRequired: Boolean;
+  InitialInstallMarkerCaptured: Boolean;
+  InitialInstallMarkerPresent: Boolean;
+
+function CanInstallInitialState(): Boolean;
+begin
+  Result := InitialInstallMarkerCaptured and (not InitialInstallMarkerPresent);
+end;
+
+function CanInstallStagedUpdate(): Boolean;
+begin
+  Result := InitialInstallMarkerCaptured and InitialInstallMarkerPresent;
+end;
 
 function WinGetFileAttributes(FileName: String): Integer;
   external 'GetFileAttributesW@kernel32.dll stdcall';
@@ -215,6 +228,11 @@ var
   ResultCode: Integer;
 begin
   Result := '';
+  if not InitialInstallMarkerCaptured then
+  begin
+    InitialInstallMarkerPresent := FileExists(ExpandConstant('{app}\.malco-install-root'));
+    InitialInstallMarkerCaptured := True;
+  end;
   if HasRequiredDesktopRuntime() then
     Exit;
 

@@ -97,7 +97,10 @@ namespace Malco.Data
                 }
 
                 var spellcaster = AbilityCatalog.Find(unit.UnitId) != null;
-                if (!spellcaster && (cargo == null || cargo.Count == 0))
+                var larvaProducer = unit.UnitId == 131 || unit.UnitId == 132 || unit.UnitId == 133;
+                var morphContainer = (unit.UnitId == 36 || unit.UnitId == 59) &&
+                    unit.HitPointsRaw > 0 && unit.IsLoaded != true;
+                if (!spellcaster && !larvaProducer && !morphContainer && (cargo == null || cargo.Count == 0))
                 {
                     continue;
                 }
@@ -111,9 +114,27 @@ namespace Malco.Data
                     IconKey = unit.IconKey,
                     MapX = position.Item1,
                     MapY = position.Item2,
+                    HitPointsRaw = unit.HitPointsRaw,
                     Energy = unit.EnergyRaw.HasValue
                         ? unit.EnergyRaw.Value / 256
                         : (int?)null,
+                    IsBuilding = unit.IsBuilding,
+                    IsCompleted = unit.IsCompletedObservation,
+                    IsPowered = unit.IsPowered,
+                    IsInterruptible = unit.IsInterruptible,
+                    LockdownTimer = unit.LockdownTimer,
+                    MaelstromTimer = unit.MaelstromTimer,
+                    StasisTimer = unit.StasisTimer,
+                    IsLoaded = unit.IsLoaded,
+                    OrderId = unit.OrderId,
+                    SecondaryOrderId = unit.SecondaryOrderId,
+                    SpiderMineCount = unit.SpiderMineCount,
+                    LarvaRemainingFrames = unit.LarvaRemainingFrames,
+                    ConnectedLarvaCount = unit.ConnectedLarvaCount,
+                    MorphTargetUnitId = unit.MorphTargetUnitId,
+                    CompletedNuclearMissileCount = GetCompletedUnitCount(
+                        completedUnitCounts,
+                        AbilityCatalog.TerranNuclearMissileUnitId),
                     Cargo = cargo ?? new List<CargoUnitCount>()
                 });
             }
@@ -181,6 +202,16 @@ namespace Malco.Data
                     _cargoAssignments.Remove(assignment.PassengerUnitTag);
                 }
             }
+        }
+
+        private static int? GetCompletedUnitCount(
+            IReadOnlyDictionary<int, int> completedUnitCounts,
+            int unitId)
+        {
+            int count;
+            return completedUnitCounts != null && completedUnitCounts.TryGetValue(unitId, out count)
+                ? count
+                : (int?)null;
         }
 
         private static bool IsTransportUnit(int unitId)

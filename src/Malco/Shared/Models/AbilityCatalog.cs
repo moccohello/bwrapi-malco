@@ -43,11 +43,18 @@ namespace Malco.Models
 
     internal static class AbilityCatalog
     {
+        public const int TerranNuclearMissileUnitId = 14;
+
         private static readonly IReadOnlyList<SpellcasterDefinition> Definitions = Array.AsReadOnly(new[]
         {
             new SpellcasterDefinition(Race.Terran, 1,
                 new UnitAbilityDefinition(1, "Lockdown", 100),
-                new UnitAbilityDefinition(10, "Personnel Cloaking", 25)),
+                new UnitAbilityDefinition(10, "Personnel Cloaking", 25),
+                new UnitAbilityDefinition(45, "Nuclear Strike", 0, false)),
+            new SpellcasterDefinition(Race.Terran, 2,
+                new UnitAbilityDefinition(13, "Spider Mines", 0)),
+            new SpellcasterDefinition(Race.Terran, 5,
+                new UnitAbilityDefinition(30, "Tank Siege Mode", 0)),
             new SpellcasterDefinition(Race.Terran, 8,
                 new UnitAbilityDefinition(9, "Cloaking Field", 25)),
             new SpellcasterDefinition(Race.Terran, 9,

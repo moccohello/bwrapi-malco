@@ -94,7 +94,6 @@ namespace Malco.Data
                 capturedAt,
                 gasWorkerKeys);
             var upgrades = BuildUpgrades(runtime.Upgrades);
-            var availableUpgrades = BuildUpgrades(runtime.AvailableUpgrades);
             var unitSpatialStates = _unitSpatialStateProjector.Build(
                 localUnits,
                 runtime.CompletedUnitCounts);
@@ -108,11 +107,13 @@ namespace Malco.Data
                     UpgradeAvailabilityPolicy.BuildPrerequisiteAvailableUpgradeStates(
                         raceValue,
                         buildingCounts,
-                        upgrades))
+                        upgrades,
+                        runtime,
+                        localUnits))
                 : new List<UpgradeState>();
-            availableUpgrades = NormalizeAvailableUpgradeStatesForOwnedRaces(
+            var availableUpgrades = NormalizeAvailableUpgradeStatesForOwnedRaces(
                 ownedTechnologyRaces,
-                availableUpgrades.Concat(prerequisiteAvailableUpgrades),
+                prerequisiteAvailableUpgrades,
                 upgrades);
             return new GameSnapshot(
                 capturedAt,

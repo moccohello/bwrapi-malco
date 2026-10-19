@@ -44,6 +44,18 @@ namespace Malco.Settings.Views
                 _detailScroll.ScrollToTop();
                 return;
             }
+            if (feature.DetailKind == FeatureSettingsDetailKind.LarvaCountdown)
+            {
+                _detailHost.Children.Add(BuildLarvaCountdownSettings());
+                _detailScroll.ScrollToTop();
+                return;
+            }
+            if (feature.DetailKind == FeatureSettingsDetailKind.MorphTargetIcons)
+            {
+                _detailHost.Children.Add(BuildMorphTargetIconsSettings());
+                _detailScroll.ScrollToTop();
+                return;
+            }
             if (feature.DetailKind == FeatureSettingsDetailKind.AbilityStatus)
             {
                 _detailHost.Children.Add(BuildAbilityStatusSettings());

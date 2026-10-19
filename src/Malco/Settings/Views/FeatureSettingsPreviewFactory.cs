@@ -229,6 +229,10 @@ namespace Malco.Settings.Views
                     return TechTreeItem.Unit(0);
                 case FeatureSettingsPreviewKind.Buildings:
                     return TechTreeItem.Building(111);
+                case FeatureSettingsPreviewKind.LarvaCountdown:
+                    return TechTreeItem.Building(131);
+                case FeatureSettingsPreviewKind.MorphTargetIcons:
+                    return TechTreeItem.Unit(36);
                 case FeatureSettingsPreviewKind.Transport:
                     return TechTreeItem.Unit(11);
                 case FeatureSettingsPreviewKind.Completed:

@@ -1,0 +1,23 @@
+{
+  "schema": "malco.launcher-policy.v2",
+  "feed_url": "https://update.horangmalco.com/latest.json",
+  "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdLEPtoT6QSvMRWFtvEzVxl68xvYjh2tKPl357vYH1/VyqAmxK+D3cVtKZ1y0sG7elanTVO5GqFpvLLcX2am0Hw==",
+  "maximum_policy_bytes": 4096,
+  "maximum_envelope_bytes": 131072,
+  "maximum_signed_manifest_bytes": 70000,
+  "maximum_state_bytes": 65536,
+  "maximum_startup_marker_bytes": 65536,
+  "maximum_staged_update_bytes": 65536,
+  "maximum_files": 400,
+  "maximum_archive_bytes": 16777216,
+  "maximum_payload_bytes": 33554432,
+  "maximum_archive_entries": 600,
+  "feed_timeout_ms": 30000,
+  "archive_timeout_ms": 120000,
+  "startup_timeout_ms": 30000,
+  "authorization_timeout_ms": 30000,
+  "termination_timeout_ms": 30000,
+  "startup_poll_ms": 250,
+  "authorization_poll_ms": 250,
+  "selected_release_stability_ms": 500
+}

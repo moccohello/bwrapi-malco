@@ -10,7 +10,6 @@ namespace Malco.Data
         {
             Units = new List<BwrApiRuntimeUnit>();
             Upgrades = new List<BwrApiRuntimeUpgrade>();
-            AvailableUpgrades = new List<BwrApiRuntimeUpgrade>();
             CompletedUnitCounts = new Dictionary<int, int>();
         }
 
@@ -32,9 +31,11 @@ namespace Malco.Data
 
         public List<BwrApiRuntimeUpgrade> Upgrades { get; private set; }
 
-        public List<BwrApiRuntimeUpgrade> AvailableUpgrades { get; private set; }
-
         public Dictionary<int, int> CompletedUnitCounts { get; private set; }
+
+        public Dictionary<int, int?> UpgradeMaxLevels { get; } = new Dictionary<int, int?>();
+
+        public Dictionary<int, bool?> TechAvailability { get; } = new Dictionary<int, bool?>();
     }
 
     internal sealed class BwrApiRuntimeUnit
@@ -70,6 +71,33 @@ namespace Malco.Data
         public bool IsBuilding { get; set; }
 
         public bool IsCompleted { get; set; }
+
+        public bool? IsCompletedObservation { get; set; }
+
+        public bool? IsPowered { get; set; }
+
+        public bool? IsInterruptible { get; set; }
+
+        public byte? LockdownTimer { get; set; }
+
+        public byte? MaelstromTimer { get; set; }
+
+        public byte? StasisTimer { get; set; }
+
+        public byte? SecondaryOrderId { get; set; }
+
+        public byte? SpiderMineCount { get; set; }
+
+        public uint? LarvaRemainingFrames { get; set; }
+
+        public int? ConnectedLarvaCount { get; set; }
+        public int? MorphTargetUnitId { get; set; }
+
+        public string AddonUnitTag { get; set; }
+
+        public bool? IsResearching { get; set; }
+
+        public bool? IsUpgrading { get; set; }
 
         public bool IsWorker { get; set; }
 

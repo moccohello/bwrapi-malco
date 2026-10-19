@@ -6,14 +6,14 @@ namespace Malco.Launcher
 {
     internal static partial class Program
     {
-        private enum StartupUpdateDisposition
+        internal enum StartupUpdateDisposition
         {
             Continue,
             RequiredActivationPending,
             RequiredUpdateFailed
         }
 
-        private readonly struct StartupUpdateResult
+        internal readonly struct StartupUpdateResult
         {
             public StartupUpdateResult(
                 StartupUpdateDisposition disposition,
@@ -137,76 +137,106 @@ namespace Malco.Launcher
             StartupUpdateResult verifiedStagedUpdate,
             out bool requiredUpdateRecheck)
         {
-            requiredUpdateRecheck = false;
-            var currentSequence = state.Current?.Sequence ?? 0;
-            if (verifiedStagedUpdate.Candidate != null &&
-                verifiedStagedUpdate.Candidate.Sequence <= currentSequence)
-            {
-                verifiedStagedUpdate = new StartupUpdateResult(
-                    StartupUpdateDisposition.Continue,
-                    verifiedStagedUpdate.Candidate,
-                    verifiedStagedUpdate.Requirement);
-            }
-
-            if (state.LastRollback?.From != null &&
-                state.LastRollback.From.Sequence > currentSequence)
-            {
-                try
+            return EvaluateStartupUpdate(
+                state,
+                verifiedStagedUpdate,
+                rollback =>
                 {
                     var failedEnvelope = verifier.VerifyInstalledRelease(
-                        state.LastRollback.From,
-                        stateStore.VersionDirectory(state.LastRollback.From));
-                    if (string.Equals(
-                            failedEnvelope.Manifest.UpdatePolicy,
-                            "required",
-                            StringComparison.Ordinal))
+                        rollback.From, stateStore.VersionDirectory(rollback.From));
+                    return string.Equals(failedEnvelope.Manifest.UpdatePolicy, "required", StringComparison.Ordinal);
+                },
+                () =>
+                {
+                    using (var installer = new ReleaseInstaller(policy, verifier, stateStore))
                     {
-                        return new StartupUpdateResult(
-                            StartupUpdateDisposition.RequiredUpdateFailed,
-                            null,
-                            UpdateRequirement.Required);
+                        return installer.FetchLatest();
+                    }
+                },
+                (latest, required, fallback) => InstallStartupUpdate(
+                    stateStore, stagedStore, verifier, policy, latest, required, fallback),
+                out requiredUpdateRecheck);
+        }
+
+        internal static StartupUpdateResult EvaluateStartupUpdate(
+            InstallState state,
+            StartupUpdateResult verifiedStagedUpdate,
+            Func<RollbackRecord, bool> verifyRollbackRequired,
+            Func<VerifiedEnvelope> fetchLatest,
+            Func<VerifiedEnvelope, bool, StartupUpdateResult, StartupUpdateResult> installLatest,
+            out bool requiredUpdateRecheck)
+        {
+            requiredUpdateRecheck = false;
+            long currentSequence = state.Current?.Sequence ?? 0;
+            bool requiredBarrier = false;
+            if (state.LastRollback?.From != null && state.LastRollback.From.Sequence > currentSequence)
+            {
+                if (state.LastRollback.UpdateRequirement.HasValue)
+                {
+                    requiredBarrier = state.LastRollback.UpdateRequirement == UpdateRequirement.Required;
+                }
+                else
+                {
+                    try
+                    {
+                        requiredBarrier = verifyRollbackRequired(state.LastRollback);
+                    }
+                    catch (Exception exception) when (IsLaunchFailure(exception))
+                    {
+                        // Unknown legacy policy cannot authorize an older offline release.
+                        requiredBarrier = true;
                     }
                 }
-                catch (Exception exception) when (IsLaunchFailure(exception))
-                {
-                    // 롤백 기록을 재검증할 수 없으면 최신 피드로 필수 여부를 판단한다.
-                }
+            }
+
+            var fallback = verifiedStagedUpdate;
+            if (fallback.Candidate != null && fallback.Candidate.Sequence <= state.HighestAcceptedSequence)
+            {
+                fallback = new StartupUpdateResult(StartupUpdateDisposition.Continue, null, UpdateRequirement.Optional);
+            }
+            if (requiredBarrier)
+            {
+                // A newer verified candidate can recover, but must inherit the
+                // barrier until activation succeeds. Failure must not launch LKG.
+                fallback = fallback.Candidate != null
+                    ? new StartupUpdateResult(StartupUpdateDisposition.RequiredActivationPending,
+                        fallback.Candidate, UpdateRequirement.Required)
+                    : new StartupUpdateResult(StartupUpdateDisposition.RequiredUpdateFailed,
+                        null, UpdateRequirement.Required);
             }
 
             VerifiedEnvelope latest;
             try
             {
-                using (var installer = new ReleaseInstaller(policy, verifier, stateStore))
-                {
-                    latest = installer.FetchLatest();
-                }
+                latest = fetchLatest();
             }
             catch (Exception exception) when (IsUpdateFailure(exception))
             {
                 requiredUpdateRecheck = IsDeferredUpdateCheckFailure(exception);
-                // 피드를 확인할 수 없으면 이미 검증한 staged update만 사용한다.
-                return verifiedStagedUpdate;
+                return fallback;
             }
-
-            if (latest.Manifest.Sequence <= currentSequence)
-            {
-                return verifiedStagedUpdate;
-            }
-            var required = string.Equals(
-                latest.Manifest.UpdatePolicy,
-                "required",
-                StringComparison.Ordinal);
+            if (latest.Manifest.Sequence <= currentSequence) return fallback;
+            bool manifestRequired = string.Equals(latest.Manifest.UpdatePolicy, "required", StringComparison.Ordinal);
             if (latest.Manifest.Sequence <= state.HighestAcceptedSequence)
             {
-                // 이미 실패해 롤백한 필수 버전은 다시 실행하지 않는다.
-                return required
-                    ? new StartupUpdateResult(
-                        StartupUpdateDisposition.RequiredUpdateFailed,
-                        null,
-                        UpdateRequirement.Required)
-                    : verifiedStagedUpdate;
+                // Do not retry an accepted failure. A newer verified staged
+                // candidate may still repair the required rollback.
+                return manifestRequired && fallback.Candidate == null
+                    ? new StartupUpdateResult(StartupUpdateDisposition.RequiredUpdateFailed, null, UpdateRequirement.Required)
+                    : fallback;
             }
+            return installLatest(latest, manifestRequired || requiredBarrier, fallback);
+        }
 
+        private static StartupUpdateResult InstallStartupUpdate(
+            InstallStateStore stateStore,
+            StagedUpdateStore stagedStore,
+            ReleaseVerifier verifier,
+            LauncherPolicy policy,
+            VerifiedEnvelope latest,
+            bool required,
+            StartupUpdateResult verifiedStagedUpdate)
+        {
             string releaseNotes = null;
             try
             {
@@ -242,6 +272,15 @@ namespace Malco.Launcher
                     return candidate;
                 },
                 releaseNotes);
+            return ResolveInstalledStartupUpdateResult(updateResult, installedCandidate, required, verifiedStagedUpdate);
+        }
+
+        internal static StartupUpdateResult ResolveInstalledStartupUpdateResult(
+            UpdateDialogResult updateResult,
+            ReleaseReference installedCandidate,
+            bool required,
+            StartupUpdateResult verifiedStagedUpdate)
+        {
             if (!updateResult.Accepted)
             {
                 return required

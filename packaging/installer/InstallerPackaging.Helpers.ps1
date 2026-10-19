@@ -1,3 +1,61 @@
+function Get-InstallerFileIdentity {
+    param([string]$Path)
+    return [ordered]@{
+        length = (Get-Item -LiteralPath $Path).Length
+        sha256 = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+}
+
+function Publish-InstallerPair {
+    param(
+        [string]$PrivateInstaller,
+        [string]$PrivateBinding,
+        [string]$DestinationInstaller,
+        [string]$DestinationBinding
+    )
+
+    $installerPath = [IO.Path]::GetFullPath($DestinationInstaller)
+    $bindingPath = [IO.Path]::GetFullPath($DestinationBinding)
+    if ($installerPath -ieq $bindingPath -or
+        [IO.Path]::GetDirectoryName($installerPath) -ine [IO.Path]::GetDirectoryName($bindingPath)) {
+        throw "The installer and binding must be distinct files in the same output directory."
+    }
+    $identity = Get-InstallerFileIdentity $PrivateInstaller
+    $lockPath = $installerPath + ".publish.lock"
+    try {
+        # Reserve this output pair before checking or publishing either file.
+        # All packaging writers use this same atomic reservation.
+        $reservation = [IO.File]::Open($lockPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    }
+    catch { throw "The installer output pair is reserved: $lockPath" }
+    $installerMoved = $false
+    try {
+        if ((Test-Path -LiteralPath $installerPath) -or (Test-Path -LiteralPath $bindingPath)) {
+            throw "The destination installer or binding already exists: $installerPath"
+        }
+        # File.Move never overwrites a file created by another writer.
+        [IO.File]::Move($PrivateInstaller, $installerPath)
+        $installerMoved = $true
+        [IO.File]::Move($PrivateBinding, $bindingPath)
+    }
+    catch {
+        if ($installerMoved) {
+            $current = Get-InstallerFileIdentity $installerPath
+            if ($current.length -ne $identity.length -or $current.sha256 -cne $identity.sha256) {
+                throw "Installer binding publication failed; the output installer changed, so rollback preserved it: $installerPath"
+            }
+            # Keep the reservation through rollback. Return only this attempt's
+            # unchanged installer to its private path; do not touch the binding.
+            [IO.File]::Move($installerPath, $PrivateInstaller)
+        }
+        throw
+    }
+    finally {
+        $reservation.Dispose()
+        [IO.File]::Delete($lockPath)
+    }
+}
+
 function Resolve-RequiredFile {
     param([string]$Path, [string]$Label)
 

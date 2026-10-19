@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using Malco.Configuration.Models;
 using Malco.Data;
+using Malco.Localization;
 
 namespace Malco.Presentation.Spatial
 {
@@ -45,6 +46,9 @@ namespace Malco.Presentation.Spatial
         private double _appliedVisualScale = double.NaN;
         private double _resourceWorkerBadgeScale = 1d;
         private bool _contentInvalidated;
+        private bool _showLarvaCountdown;
+        private bool _showMorphTargetIcons;
+        private string _unitOverlayLanguage;
 
         public SpatialPresenter(SpatialVisualTree tree, SpatialVisualStyle style, IconLocator icons)
         {
@@ -89,9 +93,18 @@ namespace Malco.Presentation.Spatial
             var canPresentContent = !state.Surface.IsEditor &&
                                     state.Snapshot != null &&
                                     state.Snapshot.IsInMatch;
+            var showLarvaCountdown = state.Preferences.DisplayPreferences?.ShowLarvaCountdown == true;
+            var showMorphTargetIcons = state.Preferences.DisplayPreferences?.ShowMorphTargetIcons == true;
+            var unitOverlayPresentationChanged = _showLarvaCountdown != showLarvaCountdown ||
+                _showMorphTargetIcons != showMorphTargetIcons ||
+                ((showLarvaCountdown || showMorphTargetIcons) &&
+                    !string.Equals(_unitOverlayLanguage, UiText.CurrentLanguage, StringComparison.Ordinal));
+            _showLarvaCountdown = showLarvaCountdown;
+            _showMorphTargetIcons = showMorphTargetIcons;
+            _unitOverlayLanguage = UiText.CurrentLanguage;
 
             var semanticContentDirty =
-                state.SemanticDirty || (_contentInvalidated && canPresentContent);
+                state.SemanticDirty || unitOverlayPresentationChanged || (_contentInvalidated && canPresentContent);
             if (semanticContentDirty || state.CommandDirty)
             {
                 var structural = ReconcileContent(

@@ -10,17 +10,11 @@ namespace Malco.Launcher
     {
         private readonly string _versionsRoot;
         private readonly string _stagingRoot;
-        private LauncherPolicy _policy;
 
         public ReleaseStorageCleaner(string versionsRoot, string stagingRoot)
         {
             _versionsRoot = versionsRoot;
             _stagingRoot = stagingRoot;
-        }
-
-        public void ConfigurePolicy(LauncherPolicy policy)
-        {
-            _policy = policy ?? throw new ArgumentNullException(nameof(policy));
         }
 
         public string VersionDirectory(ReleaseReference reference)
@@ -52,7 +46,6 @@ namespace Malco.Launcher
             Func<ReleaseReference, bool> isVersionInUse,
             ReleaseReference stagedUpdate = null)
         {
-            RequirePolicy();
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (verifier == null) throw new ArgumentNullException(nameof(verifier));
             if (isVersionInUse == null) throw new ArgumentNullException(nameof(isVersionInUse));
@@ -61,12 +54,11 @@ namespace Malco.Launcher
             var retained = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             AddRetained(retained, state.Current);
             AddRetained(retained, state.LastKnownGood);
+            // Preserve the signed policy evidence until a newer release replaces
+            // this rollback, including v2 records written before policy persistence.
+            AddRetained(retained, state.LastRollback?.From);
             if (stagedUpdate != null)
             {
-                if (_policy.RetainedStagedUpdateCount < 1)
-                {
-                    throw new InvalidDataException("The launcher policy does not permit retaining a staged update.");
-                }
                 AddRetained(retained, stagedUpdate);
             }
             if (state.Pending != null)
@@ -95,14 +87,6 @@ namespace Malco.Launcher
         private void AddRetained(HashSet<string> retained, ReleaseReference reference)
         {
             if (reference != null) retained.Add(Path.GetFullPath(VersionDirectory(reference)));
-        }
-
-        private void RequirePolicy()
-        {
-            if (_policy == null)
-            {
-                throw new InvalidOperationException("The launcher policy must be configured before state access.");
-            }
         }
 
         private static bool TryParseVersionDirectory(string name, out ReleaseReference reference)

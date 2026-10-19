@@ -11,7 +11,8 @@ namespace Malco.Data
     {
         public void PublishSemanticObservation(
             BwrApiFrameHeader header,
-            BwrApiSemanticSnapshotV1 source)
+            BwrApiSemanticSnapshotV1 source,
+            TrackedProcessIdentity? boundIdentity = null)
         {
             if (IsClosing) return;
             IProviderCommitSink commitSink = null;
@@ -71,7 +72,9 @@ namespace Malco.Data
                     message,
                     isAuthoritativeOutOfMatch:
                         source.Session != null && !source.Session.GameReady,
-                    sessionEpoch: sessionEpoch);
+                    sessionEpoch: sessionEpoch,
+                    boundProcessId: boundIdentity?.ProcessId,
+                    boundProcessStartedAtUtc: boundIdentity?.ProcessStartedAtUtc);
                 ProviderChannelState before = Volatile.Read(ref _channels);
                 ProviderChannelState after =
                     ProviderChannelStateUpdater.UpdateSemantic(

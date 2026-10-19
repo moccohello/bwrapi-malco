@@ -60,29 +60,6 @@ namespace Malco.Overlay
             _requiredProcessStartedAtUtc = null;
         }
 
-        public bool IsForeground(GameWindowInfo window)
-        {
-            if (window == null)
-            {
-                return false;
-            }
-
-            var foregroundWindow = NativeMethods.GetForegroundWindow();
-            if (foregroundWindow == IntPtr.Zero)
-            {
-                return false;
-            }
-
-            if (foregroundWindow == window.Handle)
-            {
-                return true;
-            }
-
-            uint foregroundProcessId;
-            NativeMethods.GetWindowThreadProcessId(foregroundWindow, out foregroundProcessId);
-            return foregroundProcessId == window.ProcessId;
-        }
-
         private bool TryRefreshCachedWindow(bool refreshGeometry, out GameWindowInfo window)
         {
             window = null;

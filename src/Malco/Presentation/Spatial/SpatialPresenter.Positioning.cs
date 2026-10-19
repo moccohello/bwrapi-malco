@@ -109,16 +109,23 @@ namespace Malco.Presentation.Spatial
             double mapY;
             visual.ResolvePresentedPosition(presentationTimestamp, out mapX, out mapY);
             var point = projection.ToScreen(mapX, mapY);
+            var isLarvaCountdown = visual.ContentKey.IndexOf(";larva=", StringComparison.Ordinal) >= 0;
             var bounds = new Rect(
                 point.X - width / 2d,
-                point.Y - height / 2d,
+                isLarvaCountdown
+                    ? point.Y + 32d * projection.MapScale - height / 2d
+                    : point.Y - height / 2d,
                 width,
                 height);
+            // A morph icon identifies this container; never pin it to a viewport edge away from the sprite.
+            if (visual.ContentKey.IndexOf(";morph=", StringComparison.Ordinal) >= 0 &&
+                !projection.IsRectInsideVisible(bounds))
+                return SetVisibility(visual.Badge, Visibility.Collapsed);
             if (!projection.TryClampRectInsideVisible(
                     bounds,
                     point,
-                    48d * projection.MapScale,
-                    40d * projection.MapScale,
+                    (isLarvaCountdown ? 64d : 48d) * projection.MapScale,
+                    (isLarvaCountdown ? 48d : 40d) * projection.MapScale,
                     out bounds))
                 return SetVisibility(visual.Badge, Visibility.Collapsed);
             return SetCanvasLeft(visual.Badge, bounds.Left) +

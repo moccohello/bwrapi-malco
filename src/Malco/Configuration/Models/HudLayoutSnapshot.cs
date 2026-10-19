@@ -93,6 +93,8 @@ namespace Malco.Configuration.Models
             ResourceWorkerIconSize = source.GetIconSize("resource-workers");
             WorkerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(source.WorkerCountStyle);
             ShowTransportCargo = source.ShowTransportCargo;
+            ShowLarvaCountdown = source.ShowLarvaCountdown;
+            ShowMorphTargetIcons = source.ShowMorphTargetIcons;
             _widgets = CopyWidgets(source.Widgets);
             _itemSettings = CopyItems(source.ItemSettings);
             _abilityDisplayModes = CopyStrings(source.AbilityDisplayModes);
@@ -109,6 +111,8 @@ namespace Malco.Configuration.Models
         public string ResourceWorkerIconSize { get; }
         public string WorkerCountStyle { get; }
         public bool ShowTransportCargo { get; }
+        public bool ShowLarvaCountdown { get; }
+        public bool ShowMorphTargetIcons { get; }
         public IReadOnlyDictionary<string, WidgetLayoutSnapshot> Widgets { get { return _widgets; } }
         public IReadOnlyDictionary<string, HudItemSettingSnapshot> ItemSettings { get { return _itemSettings; } }
         public IReadOnlyDictionary<string, string> AbilityDisplayModes { get { return _abilityDisplayModes; } }
@@ -132,7 +136,9 @@ namespace Malco.Configuration.Models
                 AvailableUpgradeIconSize = AvailableUpgradeIconSize,
                 ResourceWorkerIconSize = ResourceWorkerIconSize,
                 WorkerCountStyle = WorkerCountStyle,
-                ShowTransportCargo = ShowTransportCargo
+                ShowTransportCargo = ShowTransportCargo,
+                ShowLarvaCountdown = ShowLarvaCountdown,
+                ShowMorphTargetIcons = ShowMorphTargetIcons
             };
             foreach (var entry in _widgets)
             {

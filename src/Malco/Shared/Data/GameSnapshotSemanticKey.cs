@@ -189,6 +189,29 @@ namespace Malco.Data
                     .Append(item.MapX.ToString(CultureInfo.InvariantCulture)).Append(':')
                     .Append(item.MapY.ToString(CultureInfo.InvariantCulture)).Append(':')
                     .Append(item.Energy.HasValue ? item.Energy.Value.ToString(CultureInfo.InvariantCulture) : "-")
+                    .Append(':').Append(item.HitPointsRaw.ToString(CultureInfo.InvariantCulture))
+                    .Append(':').Append(FormatNullableBoolean(item.IsCompleted))
+                    .Append(':').Append(FormatNullableBoolean(item.IsPowered))
+                    .Append(':').Append(FormatNullableBoolean(item.IsInterruptible))
+                    .Append(':').Append(FormatNullableBoolean(item.IsLoaded))
+                    .Append(':').Append(FormatNullableByte(item.LockdownTimer))
+                    .Append(':').Append(FormatNullableByte(item.MaelstromTimer))
+                    .Append(':').Append(FormatNullableByte(item.StasisTimer))
+                    .Append(':').Append(item.OrderId.ToString(CultureInfo.InvariantCulture))
+                    .Append(':').Append(FormatNullableByte(item.SecondaryOrderId))
+                    .Append(':').Append(FormatNullableByte(item.SpiderMineCount))
+                    .Append(':').Append(item.LarvaRemainingFrames.HasValue
+                        ? item.LarvaRemainingFrames.Value.ToString(CultureInfo.InvariantCulture)
+                        : "-")
+                    .Append(':').Append(item.ConnectedLarvaCount.HasValue
+                        ? item.ConnectedLarvaCount.Value.ToString(CultureInfo.InvariantCulture)
+                        : "-")
+                    .Append(':').Append(item.MorphTargetUnitId.HasValue
+                        ? item.MorphTargetUnitId.Value.ToString(CultureInfo.InvariantCulture)
+                        : "-")
+                    .Append(':').Append(item.CompletedNuclearMissileCount.HasValue
+                        ? item.CompletedNuclearMissileCount.Value.ToString(CultureInfo.InvariantCulture)
+                        : "-")
                     .Append('[');
                 foreach (var cargo in (item.Cargo ?? new List<CargoUnitCount>()).OrderBy(cargo => cargo.UnitId))
                 {
@@ -198,5 +221,11 @@ namespace Malco.Data
                 builder.Append("]|");
             }
         }
+
+        private static string FormatNullableBoolean(bool? value) =>
+            value.HasValue ? (value.Value ? "1" : "0") : "-";
+
+        private static string FormatNullableByte(byte? value) =>
+            value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "-";
     }
 }

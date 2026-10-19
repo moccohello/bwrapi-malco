@@ -28,7 +28,9 @@ namespace Malco.Data
             long sessionGeneration,
             string message,
             bool isAuthoritativeOutOfMatch = false,
-            string sessionEpoch = null)
+            string sessionEpoch = null,
+            int? boundProcessId = null,
+            DateTime? boundProcessStartedAtUtc = null)
             : this(
                 status,
                 FrozenSemanticSnapshot.Freeze(snapshot),
@@ -38,7 +40,9 @@ namespace Malco.Data
                 sessionGeneration,
                 message,
                 isAuthoritativeOutOfMatch,
-                sessionEpoch)
+                sessionEpoch,
+                boundProcessId,
+                boundProcessStartedAtUtc)
         {
         }
 
@@ -51,7 +55,9 @@ namespace Malco.Data
             long sessionGeneration,
             string message,
             bool isAuthoritativeOutOfMatch,
-            string sessionEpoch)
+            string sessionEpoch,
+            int? boundProcessId,
+            DateTime? boundProcessStartedAtUtc)
         {
             Status = status;
             _snapshot = snapshot ?? FrozenSemanticSnapshot.Freeze(GameSnapshotFactory.NotReady(message));
@@ -62,6 +68,8 @@ namespace Malco.Data
             SessionEpoch = sessionEpoch ?? string.Empty;
             Message = message ?? string.Empty;
             IsAuthoritativeOutOfMatch = isAuthoritativeOutOfMatch;
+            BoundProcessId = boundProcessId;
+            BoundProcessStartedAtUtc = boundProcessStartedAtUtc;
         }
 
         public ProviderStatus Status { get; }
@@ -73,6 +81,8 @@ namespace Malco.Data
         public string SessionEpoch { get; }
         public string Message { get; }
         public bool IsAuthoritativeOutOfMatch { get; }
+        public int? BoundProcessId { get; }
+        public DateTime? BoundProcessStartedAtUtc { get; }
 
         public SemanticSnapshotState WithStatus(
             ProviderStatus status,
@@ -99,7 +109,9 @@ namespace Malco.Data
                 SessionGeneration,
                 message,
                 IsAuthoritativeOutOfMatch,
-                SessionEpoch);
+                SessionEpoch,
+                BoundProcessId,
+                BoundProcessStartedAtUtc);
         }
 
         public static SemanticSnapshotState Empty(string message)
@@ -259,7 +271,8 @@ namespace Malco.Data
         public OverlayReadModel(
             SemanticSnapshotState semantic,
             CommandProjectionState commands,
-            ViewportProjectionState viewport)
+            ViewportProjectionState viewport,
+            DateTime? semanticPublishedAtUtc = null)
         {
             Semantic = semantic ?? SemanticSnapshotState.Empty("No semantic state collected");
             Commands = commands ?? CommandProjectionState.Unavailable(
@@ -270,11 +283,13 @@ namespace Malco.Data
                 "No viewport projection collected",
                 Semantic.SessionGeneration,
                 sessionEpoch: Semantic.SessionEpoch);
+            SemanticPublishedAtUtc = semanticPublishedAtUtc;
         }
 
         public SemanticSnapshotState Semantic { get; }
         public CommandProjectionState Commands { get; }
         public ViewportProjectionState Viewport { get; }
+        public DateTime? SemanticPublishedAtUtc { get; }
 
         public static OverlayReadModel Empty(string message)
         {

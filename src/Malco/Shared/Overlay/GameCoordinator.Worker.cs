@@ -208,7 +208,11 @@ namespace Malco.Game.Services
                     current.Semantic.Frame,
                     GameSnapshotSemanticKey.Build(currentSnapshot, ProviderStatus.Error, message),
                     message);
-                var next = new OverlayReadModel(semantic, current.Commands, current.Viewport);
+                var next = new OverlayReadModel(
+                    semantic,
+                    current.Commands,
+                    current.Viewport,
+                    current.SemanticPublishedAtUtc);
                 Interlocked.Exchange(ref _stableOverlayState, next);
                 Interlocked.Increment(ref _semanticPublications);
                 Interlocked.Increment(ref _envelopePublications);

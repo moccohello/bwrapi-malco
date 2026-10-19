@@ -47,14 +47,12 @@ namespace Malco.Launcher
                     "maximum_archive_entries",
                     "feed_timeout_ms",
                     "archive_timeout_ms",
-                    "launcher_coordination_timeout_ms",
                     "startup_timeout_ms",
                     "authorization_timeout_ms",
                     "termination_timeout_ms",
                     "startup_poll_ms",
                     "authorization_poll_ms",
-                    "selected_release_stability_ms",
-                    "retained_staged_update_count");
+                    "selected_release_stability_ms");
                 RequireExactString(root, "schema", "malco.launcher-policy.v2");
                 var feedUri = ParseHttpsUri(RequireString(root, "feed_url", 2048), "feed URL");
                 var keyText = RequireString(root, "public_key_spki", 4096);
@@ -99,14 +97,12 @@ namespace Malco.Launcher
                         HardMaximumFiles * 2L)),
                     FeedTimeoutMilliseconds = checked((int)RequireInt64(root, "feed_timeout_ms", 100, 10 * 60 * 1000)),
                     ArchiveTimeoutMilliseconds = checked((int)RequireInt64(root, "archive_timeout_ms", 100, 60 * 60 * 1000)),
-                    LauncherCoordinationTimeoutMilliseconds = checked((int)RequireInt64(root, "launcher_coordination_timeout_ms", 100, 10 * 60 * 1000)),
                     StartupTimeoutMilliseconds = checked((int)RequireInt64(root, "startup_timeout_ms", 100, 10 * 60 * 1000)),
                     AuthorizationTimeoutMilliseconds = checked((int)RequireInt64(root, "authorization_timeout_ms", 100, 10 * 60 * 1000)),
                     TerminationTimeoutMilliseconds = checked((int)RequireInt64(root, "termination_timeout_ms", 100, 10 * 60 * 1000)),
                     StartupPollMilliseconds = checked((int)RequireInt64(root, "startup_poll_ms", 10, 10 * 1000)),
                     AuthorizationPollMilliseconds = checked((int)RequireInt64(root, "authorization_poll_ms", 10, 10 * 1000)),
-                    SelectedReleaseStabilityMilliseconds = checked((int)RequireInt64(root, "selected_release_stability_ms", 10, 10 * 1000)),
-                    RetainedStagedUpdateCount = checked((int)RequireInt64(root, "retained_staged_update_count", 1, 1))
+                    SelectedReleaseStabilityMilliseconds = checked((int)RequireInt64(root, "selected_release_stability_ms", 10, 10 * 1000))
                 };
                 if (bytes.Length > policy.MaximumPolicyBytes ||
                     policy.MaximumSignedManifestBytes > policy.MaximumEnvelopeBytes ||

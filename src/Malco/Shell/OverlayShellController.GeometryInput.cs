@@ -70,13 +70,6 @@ namespace Malco.Shell
             return _settings.EditorMode && HasUsableTargetWindow();
         }
 
-        private bool IsTrackedTargetMinimized()
-        {
-            return _targetWindow != null && _targetWindow.Handle != IntPtr.Zero &&
-                   NativeMethods.IsWindow(_targetWindow.Handle) &&
-                   NativeMethods.IsIconic(_targetWindow.Handle);
-        }
-
         private void SetOverlayBounds(Rect rect, bool clampWidgets, bool force = false)
         {
             if (!force && Math.Abs(_view.OverlayLeft - rect.Left) <= .5d &&

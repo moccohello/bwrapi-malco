@@ -51,12 +51,11 @@ namespace Malco.Launcher
             {
                 var notesUri = TryReleaseNotesUri(envelope.Manifest.Archive.Uri);
                 if (notesUri == null) return null;
-                var bytes = TryDownloadBytes(
+                var bytes = DownloadBytes(
                         notesUri,
                         ContractCodec.MaximumReleaseNotesBytes,
                         TimeSpan.FromMilliseconds(_policy.FeedTimeoutMilliseconds))
                     .GetAwaiter().GetResult();
-                if (bytes == null) return null;
                 return ContractCodec.TryReadReleaseNote(bytes, korean);
             }
             catch (Exception exception) when (
@@ -149,48 +148,6 @@ namespace Malco.Launcher
             }
 
             return notesUri;
-        }
-
-        private async Task<byte[]> TryDownloadBytes(Uri uri, int maximumBytes, TimeSpan timeout)
-        {
-            using (var cancellation = new CancellationTokenSource(timeout))
-            using (var request = new HttpRequestMessage(HttpMethod.Get, uri))
-            using (var response = await _client.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellation.Token).ConfigureAwait(false))
-            {
-                if ((int)response.StatusCode < 200 || (int)response.StatusCode > 299)
-                {
-                    return null;
-                }
-                if (response.Content.Headers.ContentLength.HasValue &&
-                    (response.Content.Headers.ContentLength.Value <= 0 ||
-                     response.Content.Headers.ContentLength.Value > maximumBytes))
-                {
-                    return null;
-                }
-                using (var input = await response.Content.ReadAsStreamAsync(cancellation.Token).ConfigureAwait(false))
-                using (var output = new MemoryStream())
-                {
-                    var buffer = new byte[32 * 1024];
-                    while (true)
-                    {
-                        var read = await input.ReadAsync(buffer, cancellation.Token).ConfigureAwait(false);
-                        if (read == 0) break;
-                        if (output.Length > maximumBytes - read)
-                        {
-                            return null;
-                        }
-                        output.Write(buffer, 0, read);
-                    }
-                    if (output.Length == 0)
-                    {
-                        return null;
-                    }
-                    return output.ToArray();
-                }
-            }
         }
 
         private async Task<byte[]> DownloadBytes(Uri uri, int maximumBytes, TimeSpan timeout)

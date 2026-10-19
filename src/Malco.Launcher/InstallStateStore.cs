@@ -39,7 +39,6 @@ namespace Malco.Launcher
             if (policy == null) throw new ArgumentNullException(nameof(policy));
             _statePersistence.ConfigurePolicy(policy);
             _startupArtifacts.ConfigurePolicy(policy);
-            _releaseStorage.ConfigurePolicy(policy);
         }
 
         public void EnsureRoots()

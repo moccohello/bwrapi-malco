@@ -59,6 +59,28 @@ namespace Malco.Settings.Controller
             return true;
         }
 
+        private bool SetLarvaCountdownVisible(bool visible)
+        {
+            if (_layout.ShowLarvaCountdown == visible)
+            {
+                return false;
+            }
+
+            _layout.ShowLarvaCountdown = visible;
+            return true;
+        }
+
+        private bool SetMorphTargetIconsVisible(bool visible)
+        {
+            if (_layout.ShowMorphTargetIcons == visible)
+            {
+                return false;
+            }
+
+            _layout.ShowMorphTargetIcons = visible;
+            return true;
+        }
+
         private bool SetAvailableAlert(string key, bool enabled)
         {
             if (_layout.IsAvailableUpgradeAlertEnabled(key) == enabled)

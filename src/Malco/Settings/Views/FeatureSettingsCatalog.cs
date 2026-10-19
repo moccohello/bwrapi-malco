@@ -18,6 +18,8 @@ namespace Malco.Settings.Views
         Standard,
         ResourceWorkers,
         TransportCargo,
+        LarvaCountdown,
+        MorphTargetIcons,
         AbilityStatus,
         General
     }
@@ -30,6 +32,8 @@ namespace Malco.Settings.Views
         Completed,
         Available,
         Progress,
+        LarvaCountdown,
+        MorphTargetIcons,
         Command,
         Rally,
         Resources,
@@ -92,6 +96,8 @@ namespace Malco.Settings.Views
         public const string GeneralKey = "general";
         public const string ResourceWorkersKey = "resource-workers";
         public const string TransportCargoKey = "transport-cargo";
+        public const string LarvaCountdownKey = "larva-countdown";
+        public const string MorphTargetIconsKey = "morph-target-icons";
         public const string AbilityStatusKey = "ability-status";
 
         private static readonly FeatureItemPolicy UnitsPolicy = new FeatureItemPolicy(
@@ -210,6 +216,26 @@ namespace Malco.Settings.Views
                     FeatureSettingsPreviewKind.Transport,
                     FeatureSettingsGroup.Guides,
                     FeatureSettingsDetailKind.TransportCargo,
+                    default,
+                    false,
+                    true),
+                new FeatureSettingsDefinition(
+                    LarvaCountdownKey,
+                    "Larva countdown",
+                    "Show the in-game time remaining until the next larva spawns below Hatcheries, Lairs, and Hives.",
+                    FeatureSettingsPreviewKind.LarvaCountdown,
+                    FeatureSettingsGroup.Guides,
+                    FeatureSettingsDetailKind.LarvaCountdown,
+                    default,
+                    false,
+                    true),
+                new FeatureSettingsDefinition(
+                    MorphTargetIconsKey,
+                    "Morph target icons",
+                    "Show the target unit icon above eggs and cocoons.",
+                    FeatureSettingsPreviewKind.MorphTargetIcons,
+                    FeatureSettingsGroup.Guides,
+                    FeatureSettingsDetailKind.MorphTargetIcons,
                     default,
                     false,
                     true),

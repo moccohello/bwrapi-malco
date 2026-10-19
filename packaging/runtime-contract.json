@@ -2,6 +2,7 @@
   "schema_version": 2,
   "package": "BwrApi.Client",
   "runtime_path": "bwrapi/runtime/win-x64/bwrapi_runtime.dll",
+  "runtime_manifest_path": "bwrapi/runtime/win-x64/artifact-manifest.json",
   "process_access_policy": "read-query-only",
   "redistribution_notices": [
     "bwrapi/runtime/win-x64/LICENSE.runtime.txt",

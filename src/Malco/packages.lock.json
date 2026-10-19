@@ -4,9 +4,9 @@
     "net10.0-windows7.0": {
       "BwrApi.Client": {
         "type": "Direct",
-        "requested": "[4.0.0-embedded-preview.81, )",
-        "resolved": "4.0.0-embedded-preview.81",
-        "contentHash": "zgcyD6WLcFTVQTDrK/z0BZ0O2elKclgu5N/dXPNte1eFYnOEsq4232rCAcvBVpD/HAMLCIkfqUXbbIV2H2Be5Q=="
+        "requested": "[5.0.0-embedded-preview.78-larva.3, )",
+        "resolved": "5.0.0-embedded-preview.78-larva.3",
+        "contentHash": "cyZzv2+DrUB3g20MIgf4wIrLXl2BXLKcmKPCUgV3AOr7bFbUEteJynLAtlJuvov/fDyngLbWka+xEkt2u6proA=="
       },
       "malco.telemetry": {
         "type": "Project"

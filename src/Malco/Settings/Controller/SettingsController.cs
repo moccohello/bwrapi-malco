@@ -190,6 +190,10 @@ namespace Malco.Settings.Controller
                     return SetAbilityDisplayMode(edit.Key, edit.StringValue);
                 case SettingsEditKind.SetTransportCargoVisible:
                     return SetTransportCargoVisible(edit.BooleanValue);
+                case SettingsEditKind.SetLarvaCountdownVisible:
+                    return SetLarvaCountdownVisible(edit.BooleanValue);
+                case SettingsEditKind.SetMorphTargetIconsVisible:
+                    return SetMorphTargetIconsVisible(edit.BooleanValue);
                 case SettingsEditKind.ResetWidgetBounds:
                     return ResetWidgetBounds(edit.Key);
                 case SettingsEditKind.ResetAllWidgetBounds:

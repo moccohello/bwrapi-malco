@@ -19,6 +19,8 @@ namespace Malco.Configuration.Models
             IEnumerable<string> disabledCompletionWarningKeys,
             IDictionary<int, string> abilityDisplayModes,
             bool showTransportCargo,
+            bool showLarvaCountdown,
+            bool showMorphTargetIcons,
             string workerCountStyle,
             string unitIconSize,
             string buildingIconSize,
@@ -36,6 +38,8 @@ namespace Malco.Configuration.Models
             _disabledCompletionWarningKeys = new HashSet<string>(disabledCompletionWarningKeys ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
             _abilityDisplayModes = new Dictionary<int, string>(abilityDisplayModes ?? new Dictionary<int, string>());
             ShowTransportCargo = showTransportCargo;
+            ShowLarvaCountdown = showLarvaCountdown;
+            ShowMorphTargetIcons = showMorphTargetIcons;
             WorkerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(workerCountStyle);
             UnitIconSize = MalcoPreferenceValues.NormalizeIconSize(unitIconSize, MalcoPreferenceValues.IconLarge);
             BuildingIconSize = MalcoPreferenceValues.NormalizeIconSize(buildingIconSize, MalcoPreferenceValues.IconLarge);
@@ -64,8 +68,14 @@ namespace Malco.Configuration.Models
 
         public bool ShowTransportCargo { get; }
 
+        public bool ShowLarvaCountdown { get; }
+
+        public bool ShowMorphTargetIcons { get; }
+
         public bool HasUnitSpatialOverlays =>
             ShowTransportCargo ||
+            ShowLarvaCountdown ||
+            ShowMorphTargetIcons ||
             _abilityDisplayModes.Values.Any(mode =>
                 !string.Equals(
                     mode,
@@ -127,6 +137,8 @@ namespace Malco.Configuration.Models
                 disabledCompletionWarnings,
                 abilityModes,
                 layout == null || layout.ShowTransportCargo,
+                layout == null || layout.ShowLarvaCountdown,
+                layout == null || layout.ShowMorphTargetIcons,
                 layout != null ? layout.WorkerCountStyle : MalcoPreferenceValues.WorkerCountClassicGreen,
                 layout != null ? layout.UnitIconSize : MalcoPreferenceValues.IconLarge,
                 layout != null ? layout.BuildingIconSize : MalcoPreferenceValues.IconLarge,

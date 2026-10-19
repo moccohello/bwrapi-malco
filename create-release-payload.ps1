@@ -191,6 +191,7 @@ $runtimeFiles = @(
     "bwrapi/runtime/win-x64/LICENSE.runtime.txt",
     "bwrapi/runtime/win-x64/THIRD_PARTY_NOTICES.md"
 )
+$runtimeManifestPath = "bwrapi/runtime/win-x64/artifact-manifest.json"
 
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("MalcoPayload-{0}" -f [Guid]::NewGuid().ToString("N"))
 $stagingRoot = Join-Path $tempRoot "payload"
@@ -236,7 +237,7 @@ try {
     }
     $runtimeDestination = Join-Path $stagingRoot "bwrapi\runtime\win-x64"
     New-Item -ItemType Directory -Path $runtimeDestination -Force | Out-Null
-    foreach ($name in @("bwrapi_runtime.dll", "LICENSE.runtime.txt", "THIRD_PARTY_NOTICES.md")) {
+    foreach ($name in @("bwrapi_runtime.dll", "LICENSE.runtime.txt", "THIRD_PARTY_NOTICES.md", "artifact-manifest.json")) {
         $source = Resolve-RequiredFile (Join-Path $runtimeSource $name) "BWRAPI runtime file"
         $destination = Join-Path $runtimeDestination $name
         if (Test-Path -LiteralPath $destination -PathType Leaf) {
@@ -267,7 +268,7 @@ try {
             (Join-Path $stagingRoot "Malco.dll")
     }
 
-    foreach ($path in $requiredFiles + $runtimeFiles) {
+    foreach ($path in $requiredFiles + $runtimeFiles + $runtimeManifestPath) {
         $null = Resolve-RequiredFile (Join-Path $stagingRoot ($path.Replace('/', '\'))) "Payload file"
     }
 
@@ -294,11 +295,12 @@ try {
 
     $runtimeContract = Get-Content -LiteralPath (Join-Path $stagingRoot "RUNTIME-CONTRACT.json") -Raw | ConvertFrom-Json
     Assert-ExactProperties $runtimeContract @(
-        "schema_version", "package", "runtime_path", "process_access_policy", "redistribution_notices"
+        "schema_version", "package", "runtime_path", "runtime_manifest_path", "process_access_policy", "redistribution_notices"
     ) "Runtime contract"
     if ([int]$runtimeContract.schema_version -ne 2 -or
         [string]$runtimeContract.package -cne "BwrApi.Client" -or
         [string]$runtimeContract.runtime_path -cne $runtimeFiles[0] -or
+        [string]$runtimeContract.runtime_manifest_path -cne $runtimeManifestPath -or
         [string]$runtimeContract.process_access_policy -cne "read-query-only") {
         throw "The runtime contract has an unsupported identity."
     }

@@ -58,6 +58,10 @@ namespace Malco.Presentation
                         : string.Empty,
                     snapshot);
                 _shellController.RefreshRuntimeMode();
+                _hudMetrics.RecordDisplayState(
+                    _shellController.CurrentMode,
+                    _shellController.HasUsableTarget,
+                    semanticState);
                 if (_shellController.CurrentMode == OverlayRuntimeMode.SettingsOnly)
                 {
                     _scenePresenter.Accept(semanticState, commands);
@@ -81,6 +85,13 @@ namespace Malco.Presentation
                     ref spatialSemanticsChanged);
                 _view.RefreshVisibility();
                 _scenePresenter.Accept(semanticState, commands);
+                _hudMetrics.RecordHudPresentation(
+                    semanticState,
+                    overlayState != null
+                        ? overlayState.SemanticPublishedAtUtc
+                        : null,
+                    snapshot,
+                    _view.DisplayPreferences);
             }
             finally
             {

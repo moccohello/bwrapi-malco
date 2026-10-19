@@ -88,6 +88,7 @@ namespace Malco.Data
                 token);
             try
             {
+                token.ThrowIfCancellationRequested();
                 lock (_gate)
                 {
                     if (!_hasProcessIdentity ||

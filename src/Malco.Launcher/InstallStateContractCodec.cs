@@ -85,6 +85,12 @@ namespace Malco.Launcher
                         writer.WriteStartObject();
                         WriteReference(writer, "from", state.LastRollback.From);
                         WriteReference(writer, "to", state.LastRollback.To);
+                        if (state.LastRollback.UpdateRequirement.HasValue)
+                        {
+                            writer.WriteString("update_requirement",
+                                state.LastRollback.UpdateRequirement == UpdateRequirement.Required
+                                    ? "required" : "optional");
+                        }
                         writer.WriteEndObject();
                     }
                     writer.WriteEndObject();
@@ -159,10 +165,13 @@ namespace Malco.Launcher
         {
             if (element.ValueKind == JsonValueKind.Null) return null;
             var value = RequireObject(element, "last rollback");
-            RequireProperties(value, "from", "to");
+            bool hasRequirement = value.TryGetProperty("update_requirement", out _);
+            if (hasRequirement) RequireProperties(value, "from", "to", "update_requirement");
+            else RequireProperties(value, "from", "to");
             return new RollbackRecord(
                 ParseRequiredReference(RequireProperty(value, "from"), "rollback source"),
-                ParseNullableReference(RequireProperty(value, "to"), "rollback target"));
+                ParseNullableReference(RequireProperty(value, "to"), "rollback target"),
+                hasRequirement ? ParseUpdateRequirement(value) : null);
         }
 
         private static ReleaseReference ParseNullableReference(JsonElement element, string label) =>
@@ -216,6 +225,12 @@ namespace Malco.Launcher
             }
             if (state.LastRollback != null)
             {
+                if (state.LastRollback.UpdateRequirement.HasValue &&
+                    state.LastRollback.UpdateRequirement != UpdateRequirement.Optional &&
+                    state.LastRollback.UpdateRequirement != UpdateRequirement.Required)
+                {
+                    throw new InvalidDataException("The rollback update requirement is invalid.");
+                }
                 if (state.LastRollback.From == null)
                 {
                     throw new InvalidDataException("The rollback source is missing.");

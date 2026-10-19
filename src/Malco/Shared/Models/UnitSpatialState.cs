@@ -23,7 +23,25 @@ namespace Malco.Models
         public string IconKey { get; set; }
         public int MapX { get; set; }
         public int MapY { get; set; }
+        public int HitPointsRaw { get; set; }
         public int? Energy { get; set; }
+        public bool IsBuilding { get; set; }
+        public bool? IsCompleted { get; set; }
+        public bool? IsPowered { get; set; }
+        public bool? IsInterruptible { get; set; }
+        public byte? LockdownTimer { get; set; }
+        public byte? MaelstromTimer { get; set; }
+        public byte? StasisTimer { get; set; }
+        public bool? IsLoaded { get; set; }
+        public int OrderId { get; set; }
+        public byte? SecondaryOrderId { get; set; }
+        public byte? SpiderMineCount { get; set; }
+
+        public uint? LarvaRemainingFrames { get; set; }
+
+        public int? ConnectedLarvaCount { get; set; }
+        public int? MorphTargetUnitId { get; set; }
+        public int? CompletedNuclearMissileCount { get; set; }
         public List<CargoUnitCount> Cargo { get; set; }
     }
 }

@@ -21,6 +21,9 @@ param(
     [Parameter(Mandatory)]
     [string]$InnoCompilerPath,
 
+    [Parameter(Mandatory)]
+    [string]$ReleaseToolPath,
+
     [string]$OutputDirectory = (Join-Path $PSScriptRoot "artifacts\installer")
 )
 
@@ -36,6 +39,7 @@ $policyPath = Resolve-RequiredFile $LauncherPolicy "Launcher policy"
 $runtimeContractPath = Resolve-RequiredFile $DesktopRuntimeContract "Desktop runtime contract"
 $runtimeInstallerPath = Resolve-RequiredFile $DesktopRuntimeInstaller "Desktop runtime installer"
 $isccPath = Resolve-RequiredFile $InnoCompilerPath "Inno Setup compiler"
+$releaseTool = Resolve-RequiredFile $ReleaseToolPath "ReleaseTool"
 $installerDefinition = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\Malco.iss") "Installer definition"
 $englishLanguage = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\language-en-US.isl") "English installer language label"
 $koreanLanguage = Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\installer\language-ko-KR.isl") "Korean installer language label"
@@ -50,12 +54,27 @@ $desktopRuntime = Read-DesktopRuntimeContract $runtimeContractPath
 Assert-DesktopRuntimeInstaller $runtimeInstallerPath $desktopRuntime
 $archiveRoot = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) "mi"))
 $workRoot = Join-Path $archiveRoot ([Guid]::NewGuid().ToString("N"))
-$preparedRoot = Join-Path $workRoot "prepared"
-$compiledRoot = Join-Path $workRoot "compiled"
+$preparedRoot = Join-Path $workRoot "p"
+$compiledRoot = Join-Path $workRoot "c"
 $outputRoot = [IO.Path]::GetFullPath($OutputDirectory)
 $expectedInstaller = Join-Path $outputRoot ("Malco-{0}-Setup.exe" -f $releaseVersion)
+$expectedBinding = Join-Path $outputRoot ("Malco-{0}-Setup.binding.json" -f $releaseVersion)
 New-Item -ItemType Directory -Path $preparedRoot, $compiledRoot -Force | Out-Null
 try {
+    # Verify the exact private inputs consumed below, not mutable caller paths.
+    Copy-Item -LiteralPath $latestPath -Destination (Join-Path $workRoot "latest.json")
+    Copy-Item -LiteralPath $archivePath -Destination (Join-Path $workRoot "payload.zip")
+    Copy-Item -LiteralPath $policyPath -Destination (Join-Path $workRoot "launcher-policy.json")
+    $latestPath = Join-Path $workRoot "latest.json"
+    $archivePath = Join-Path $workRoot "payload.zip"
+    $policyPath = Join-Path $workRoot "launcher-policy.json"
+    $verification = & $releaseTool verify --json --latest $latestPath --payload $archivePath --launcher-policy $policyPath 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "ReleaseTool rejected the installer envelope/payload pair: $verification" }
+    $verified = ($verification -join [Environment]::NewLine) | ConvertFrom-Json
+    $manifest = Read-ReleaseManifest $latestPath
+    if ([string]$verified.version -cne $releaseVersion -or [long]$verified.sequence -ne [long]$manifest.sequence) {
+        throw "The installer inputs changed before verification."
+    }
     Copy-Item -LiteralPath $launcherPath -Destination (Join-Path $preparedRoot "Malco.Launcher.exe")
     Copy-Utf8JsonContract $policyPath (Join-Path $preparedRoot "launcher-policy.json") "Launcher policy"
     Copy-Item -LiteralPath $installerDefinition -Destination (Join-Path $workRoot "Malco.iss")
@@ -85,6 +104,13 @@ try {
     [IO.File]::WriteAllText(
         (Join-Path $stateRoot "install-state.json"),
         ($state | ConvertTo-Json -Depth 8),
+        ([Text.UTF8Encoding]::new($false)))
+    # Reinstall keeps the existing selector; Launcher verifies and activates
+    # this packaged candidate through its normal startup/rollback path.
+    $stagedUpdate = [ordered]@{ schema = "malco.staged-update.v1"; candidate = $reference }
+    [IO.File]::WriteAllText(
+        (Join-Path $stateRoot "staged-update.json"),
+        ($stagedUpdate | ConvertTo-Json -Depth 4),
         ([Text.UTF8Encoding]::new($false)))
 
     Add-Type -AssemblyName System.IO.Compression
@@ -130,10 +156,17 @@ try {
         throw "The expected installer executable was not created."
     }
     New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
-    if (Test-Path -LiteralPath $expectedInstaller) {
-        throw "The destination installer already exists: $expectedInstaller"
+    $binding = [ordered]@{
+        schema = "malco.installer-binding.v1"
+        version = $releaseVersion
+        sequence = [long]$manifest.sequence
+        installer = Get-InstallerFileIdentity $privateInstaller
+        envelope = Get-InstallerFileIdentity $latestPath
+        payload = Get-InstallerFileIdentity $archivePath
     }
-    Move-Item -LiteralPath $privateInstaller -Destination $expectedInstaller
+    $privateBinding = Join-Path $compiledRoot "installer-binding.json"
+    [IO.File]::WriteAllText($privateBinding, ($binding | ConvertTo-Json -Depth 8), ([Text.UTF8Encoding]::new($false)))
+    Publish-InstallerPair $privateInstaller $privateBinding $expectedInstaller $expectedBinding
     Write-Host "Installer created: $expectedInstaller" -ForegroundColor Green
 }
 finally {

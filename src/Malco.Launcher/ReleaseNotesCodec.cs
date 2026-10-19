@@ -44,9 +44,7 @@ namespace Malco.Launcher
         {
             var text = RequireString(root, name, MaximumReleaseNoteTextLength);
             var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n').TrimEnd('\n');
-            if (normalized.Length == 0 ||
-                string.IsNullOrWhiteSpace(normalized) ||
-                normalized.Length > MaximumReleaseNoteTextLength ||
+            if (string.IsNullOrWhiteSpace(normalized) ||
                 normalized.Any(character => character < 0x20 && character != '\n' && character != '\t'))
             {
                 throw new InvalidDataException("The " + name + " release note is invalid.");

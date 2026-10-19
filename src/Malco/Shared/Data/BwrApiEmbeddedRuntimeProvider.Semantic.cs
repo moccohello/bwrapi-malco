@@ -9,7 +9,10 @@ namespace Malco.Data
 {
     internal sealed partial class BwrApiEmbeddedRuntimeProvider
     {
-        private void PollSemanticLoop(BwrApiClient client, CancellationToken token)
+        private void PollSemanticLoop(
+            BwrApiClient client,
+            TrackedProcessIdentity boundIdentity,
+            CancellationToken token)
         {
             long nextSemantic = 0;
             TimeSpan semanticInterval = TimeSpan.FromMilliseconds(
@@ -27,7 +30,7 @@ namespace Malco.Data
                 nextSemantic = EnableDeadline(demand.NeedsSemantic, nextSemantic, now);
                 if (IsDue(nextSemantic, now))
                 {
-                    PollSemanticOnce(client, token);
+                    PollSemanticOnce(client, boundIdentity, token);
                     nextSemantic = NextDeadline(now, semanticInterval);
                 }
 
@@ -39,7 +42,10 @@ namespace Malco.Data
             }
         }
 
-        private void PollSemanticOnce(BwrApiClient client, CancellationToken token)
+        private void PollSemanticOnce(
+            BwrApiClient client,
+            TrackedProcessIdentity boundIdentity,
+            CancellationToken token)
         {
             try
             {
@@ -48,17 +54,14 @@ namespace Malco.Data
                 BwrApiFrameHeader header = lease.ReadHeader();
                 BwrApiSemanticSnapshotV1 source = lease.ReadSemanticSnapshotV1();
                 _metrics.RecordSemanticConversion();
-                _publication.PublishSemanticObservation(header, source);
+                _publication.PublishSemanticObservation(header, source, boundIdentity);
                 _metrics.CompleteSemanticPoll(performance);
             }
             catch (BwrApiHostUnavailableException)
             {
-                if (_publication.GetProviderChannelState().Semantic.Sequence == null)
-                {
-                    _publication.PublishSemanticFailure(
-                        "Embedded observer is waiting for a semantic frame",
-                        ProviderStatus.NotReady);
-                }
+                _publication.PublishSemanticFailure(
+                    "Embedded observer is waiting for a semantic frame",
+                    ProviderStatus.NotReady);
             }
             catch (BwrApiNativeCancelledException) when (token.IsCancellationRequested)
             {

@@ -11,7 +11,9 @@ namespace Malco.Data
         internal static List<UpgradeState> BuildPrerequisiteAvailableUpgradeStates(
             Race race,
             IEnumerable<UnitCount> buildingCounts,
-            IEnumerable<UpgradeState> knownStates)
+            IEnumerable<UpgradeState> knownStates,
+            BwrApiRuntimeSnapshot runtime = null,
+            IEnumerable<BwrApiRuntimeUnit> localUnits = null)
         {
             var countList = (buildingCounts ?? new UnitCount[0])
                 .Where(count => count != null)
@@ -37,7 +39,9 @@ namespace Malco.Data
                     completedBuildings,
                     completedBuildingCounts,
                     completedLevels,
-                    busyProducerCounts))
+                    busyProducerCounts,
+                    runtime,
+                    localUnits))
                 .Where(state => state != null)
                 .ToList();
         }
@@ -47,7 +51,9 @@ namespace Malco.Data
             HashSet<int> completedBuildings,
             IDictionary<int, int> completedBuildingCounts,
             IDictionary<string, int> completedLevels,
-            IDictionary<string, int> busyProducerCounts)
+            IDictionary<string, int> busyProducerCounts,
+            BwrApiRuntimeSnapshot runtime,
+            IEnumerable<BwrApiRuntimeUnit> localUnits)
         {
             if (rule != null && !rule.IsUpgrade && NonResearchTechTypeIds.Contains(rule.Index))
             {
@@ -59,7 +65,9 @@ namespace Malco.Data
             if (rule.IsUpgrade)
             {
                 completedLevels.TryGetValue(rule.StateKey, out level);
-                var maxLevel = Math.Max(1, BwapiBroodWarTables.GetUpgradeMaxLevel(rule.Index));
+                int? mapMaxLevel = null;
+                runtime?.UpgradeMaxLevels.TryGetValue(rule.Index, out mapMaxLevel);
+                var maxLevel = mapMaxLevel ?? Math.Max(1, BwapiBroodWarTables.GetUpgradeMaxLevel(rule.Index));
                 if (level >= maxLevel)
                 {
                     return null;
@@ -75,6 +83,12 @@ namespace Malco.Data
             {
                 return null;
             }
+            else if (!rule.IsUnitMorph && runtime != null &&
+                     runtime.TechAvailability.TryGetValue(rule.Index, out bool? permitted) &&
+                     permitted == false)
+            {
+                return null;
+            }
 
             return new UpgradeState
             {
@@ -87,8 +101,31 @@ namespace Malco.Data
                 IsComplete = false,
                 IsInProgress = false,
                 IsAvailable = true,
-                IsBlocked = IsProducerBusy(rule, completedBuildingCounts, busyProducerCounts)
+                // Opportunity stays visible while its producer is busy or
+                // readiness cannot be confirmed; it is not a canResearch result.
+                IsBlocked = localUnits == null
+                    ? IsProducerBusy(rule, completedBuildingCounts, busyProducerCounts)
+                    : !HasUsableProducer(rule, localUnits)
             };
+        }
+
+        private static bool HasUsableProducer(
+            UpgradeOpportunityRule rule,
+            IEnumerable<BwrApiRuntimeUnit> localUnits)
+        {
+            const int researchTechOrder = 75;
+            const int upgradeOrder = 76;
+            var units = localUnits.Where(unit => unit.IsCompleted && unit.IsBuilding &&
+                !unit.IsHallucination && !RuntimeUnitSemantics.IsLiftedBuilding(unit)).ToList();
+            var producerTypes = new HashSet<int>(GetProducerGroup(rule));
+            return units.Any(producer => producerTypes.Contains(producer.UnitId) &&
+                producer.IsResearching == false && producer.IsUpgrading == false &&
+                producer.OrderId != researchTechOrder && producer.OrderId != upgradeOrder &&
+                (rule.Race != Race.Protoss || producer.IsPowered == true) &&
+                (rule.Race != Race.Terran || rule.RequiredBuildingGroups.Length < 2 ||
+                 units.Any(parent => rule.RequiredBuildingGroups[0].Contains(parent.UnitId) &&
+                     !string.IsNullOrEmpty(producer.UnitTag) &&
+                     string.Equals(parent.AddonUnitTag, producer.UnitTag, StringComparison.Ordinal))));
         }
 
         private static string BuildOpportunityStateName(UpgradeOpportunityRule rule, int displayLevel)

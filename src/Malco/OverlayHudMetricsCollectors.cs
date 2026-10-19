@@ -101,6 +101,7 @@ namespace Malco
                 return;
             }
 
+            var observedAtUtc = DateTime.UtcNow;
             var completedTimestamp = Stopwatch.GetTimestamp();
             var elapsed = Stopwatch.GetElapsedTime(probe.StartedTimestamp, completedTimestamp);
             var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - probe.AllocatedBytesBefore;
@@ -129,6 +130,9 @@ namespace Malco
                 }
 
                 _lastRenderingTimestamp = completedTimestamp;
+                _lastCompositionRender = new CompositionRenderDiagnostic(
+                    observedAtUtc,
+                    _lastHudPresentation);
             }
         }
 

@@ -8,6 +8,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <RestoreSources>$(LocalAppData)\BWRAPI\packages;https://api.nuget.org/v3/index.json</RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,5 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Malco\Malco.csproj" />
+    <ProjectReference Include="..\..\src\Malco.Launcher\Malco.Launcher.csproj" />
   </ItemGroup>
 </Project>

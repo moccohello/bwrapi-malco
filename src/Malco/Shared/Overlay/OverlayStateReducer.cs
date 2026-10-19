@@ -219,14 +219,23 @@ namespace Malco.Game.Services
                 currentState.Viewport,
                 semantic.SessionEpoch,
                 semantic.SessionGeneration);
+            DateTime? semanticPublishedAtUtc =
+                provider != null && ReferenceEquals(semantic, provider.Semantic)
+                    ? provider.SemanticPublishedAtUtc
+                    : currentState.SemanticPublishedAtUtc;
             if (ReferenceEquals(semantic, currentState.Semantic) &&
                 ReferenceEquals(commands, currentState.Commands) &&
-                ReferenceEquals(viewport, currentState.Viewport))
+                ReferenceEquals(viewport, currentState.Viewport) &&
+                semanticPublishedAtUtc == currentState.SemanticPublishedAtUtc)
             {
                 return currentState;
             }
 
-            return new OverlayReadModel(semantic, commands, viewport);
+            return new OverlayReadModel(
+                semantic,
+                commands,
+                viewport,
+                semanticPublishedAtUtc);
         }
 
         private static bool MatchesSession(

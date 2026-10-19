@@ -12,7 +12,10 @@ namespace Malco
 {
     internal sealed partial class OverlayHudMetrics
     {
-        private MetricsSnapshot CaptureSnapshot(DateTime capturedAtUtc)
+        private MetricsSnapshot CaptureSnapshot(
+            DateTime capturedAtUtc,
+            HudPresentationDiagnostic hudPresentation,
+            CompositionRenderDiagnostic compositionRender)
         {
             ProviderPerformanceCounters providerPerformance = _providerMetrics != null
                 ? _providerMetrics.GetPerformanceCounters()
@@ -49,7 +52,10 @@ namespace Malco
                     : default,
                 ProviderPerformance = providerPerformance,
                 FramePump = framePump,
-                Process = CaptureProcessMetrics(capturedAtUtc)
+                Process = CaptureProcessMetrics(capturedAtUtc),
+                HudPresentation = hudPresentation,
+                CompositionRender = compositionRender,
+                DisplayState = _lastDisplayState
             };
         }
 
@@ -147,13 +153,16 @@ namespace Malco
             public ProviderPerformanceCounters ProviderPerformance { get; set; }
             public FramePumpCounters FramePump { get; set; }
             public ProcessMetricsSnapshot Process { get; set; }
+            public HudPresentationDiagnostic HudPresentation { get; set; }
+            public CompositionRenderDiagnostic CompositionRender { get; set; }
+            public object DisplayState { get; set; }
 
             public string BuildJson()
             {
                 var elapsedSeconds = Math.Max(0.001d, (CapturedAtUtc - StartedAtUtc).TotalSeconds);
                 var payload = new
                 {
-                    schema = "bwrapi.overlay_hud_metrics.v4",
+                    schema = "bwrapi.overlay_hud_metrics.v5",
                     scenario = Scenario,
                     started_at_utc = StartedAtUtc,
                     captured_at_utc = CapturedAtUtc,
@@ -217,6 +226,13 @@ namespace Malco
                             TicksToMicroseconds(FramePump.ApplyLatencyTicks))
                     },
                     frame_pump_pending_frame = FramePump.PendingFrame,
+                    display_state = DisplayState,
+                    hud_presentation = HudPresentation != null
+                        ? HudPresentation.ToPayload()
+                        : null,
+                    composition_render_observation = CompositionRender != null
+                        ? CompositionRender.ToPayload()
+                        : null,
                     process = new
                     {
                         cpu_total_ms = Process.TotalCpuMilliseconds,
@@ -229,6 +245,183 @@ namespace Malco
                 };
                 return JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
             }
+        }
+
+        private sealed class AbilityBadgeDiagnostic
+        {
+            public AbilityBadgeDiagnostic(
+                string actorId,
+                int unitTypeId,
+                string mode,
+                string abilityName,
+                bool readyBadgeComputed,
+                string readyBadgeToken,
+                int candidateOrder,
+                object minimumFacts)
+            {
+                ActorId = actorId;
+                UnitTypeId = unitTypeId;
+                Mode = mode;
+                AbilityName = abilityName;
+                ReadyBadgeComputed = readyBadgeComputed;
+                ReadyBadgeToken = readyBadgeToken;
+                CandidateOrder = candidateOrder;
+                MinimumFacts = minimumFacts;
+            }
+
+            private string ActorId { get; }
+            private int UnitTypeId { get; }
+            private string Mode { get; }
+            private string AbilityName { get; }
+            public bool ReadyBadgeComputed { get; }
+            private string ReadyBadgeToken { get; }
+            public int CandidateOrder { get; }
+            private object MinimumFacts { get; }
+
+            public object ToPayload() => new
+            {
+                actor_id = ActorId,
+                unit_type_id = UnitTypeId,
+                ability_mode = Mode,
+                ability_name = AbilityName,
+                ready_badge_computed = ReadyBadgeComputed,
+                ready_token = ReadyBadgeToken,
+                ready_badge_visible = (bool?)null,
+                ready_badge_visibility_source = "not_observed",
+                minimum_condition_facts = MinimumFacts
+            };
+        }
+
+        private sealed class AbilityBadgeCapture
+        {
+            public AbilityBadgeCapture(
+                int? candidateCount,
+                int? capturedCount,
+                bool? truncated,
+                string selectionPolicy,
+                AbilityBadgeDiagnostic[] badges)
+            {
+                CandidateCount = candidateCount;
+                CapturedCount = capturedCount;
+                Truncated = truncated;
+                SelectionPolicy = selectionPolicy;
+                Badges = badges ?? Array.Empty<AbilityBadgeDiagnostic>();
+            }
+
+            public int? CandidateCount { get; }
+            public int? CapturedCount { get; }
+            public bool? Truncated { get; }
+            public string SelectionPolicy { get; }
+            public AbilityBadgeDiagnostic[] Badges { get; }
+
+            public static AbilityBadgeCapture Unavailable() => new(
+                null,
+                null,
+                null,
+                "not_observed",
+                Array.Empty<AbilityBadgeDiagnostic>());
+
+            public object ToPayload() => new
+            {
+                candidate_count = CandidateCount,
+                captured_count = CapturedCount,
+                truncated = Truncated,
+                selection_policy = SelectionPolicy,
+                omitted_candidate_readiness = Truncated == true
+                    ? "unknown_not_in_output"
+                    : null,
+                badges = Badges.Select(badge => badge.ToPayload()).ToArray()
+            };
+        }
+
+        private sealed class HudPresentationDiagnostic
+        {
+            public HudPresentationDiagnostic(
+                DateTime committedAtUtc,
+                DateTime? providerCommittedAtUtc,
+                int? boundProcessId,
+                DateTime? boundProcessStartedAtUtc,
+                string sessionEpoch,
+                long? sessionGeneration,
+                long? publicationSequence,
+                int? gameFrame,
+                AbilityBadgeCapture badgeCapture)
+            {
+                CommittedAtUtc = committedAtUtc;
+                ProviderCommittedAtUtc = providerCommittedAtUtc;
+                BoundProcessId = boundProcessId;
+                BoundProcessStartedAtUtc = boundProcessStartedAtUtc;
+                SessionEpoch = sessionEpoch;
+                SessionGeneration = sessionGeneration;
+                PublicationSequence = publicationSequence;
+                GameFrame = gameFrame;
+                BadgeCapture = badgeCapture ?? AbilityBadgeCapture.Unavailable();
+            }
+
+            public DateTime CommittedAtUtc { get; }
+            private DateTime? ProviderCommittedAtUtc { get; }
+            private int? BoundProcessId { get; }
+            private DateTime? BoundProcessStartedAtUtc { get; }
+            private string SessionEpoch { get; }
+            private long? SessionGeneration { get; }
+            private long? PublicationSequence { get; }
+            private int? GameFrame { get; }
+            private AbilityBadgeCapture BadgeCapture { get; }
+
+            public object ToSourceFencePayload() => new
+            {
+                session_epoch = SessionEpoch,
+                session_generation = SessionGeneration,
+                publication_sequence = PublicationSequence,
+                game_frame = GameFrame
+            };
+
+            public object ToPayload() => new
+            {
+                stage = "malco_overlay_spatial_presentation_commit",
+                committed_at_utc = CommittedAtUtc,
+                provider_committed_at_utc = ProviderCommittedAtUtc,
+                bound_observer = new
+                {
+                    process_id = BoundProcessId,
+                    process_started_at_utc = BoundProcessStartedAtUtc
+                },
+                source_fence = ToSourceFencePayload(),
+                readiness_scope = "existing_partial_ready_badge_computation_only",
+                full_can_use_tech_claimed = false,
+                actual_badge_visibility_observed = false,
+                native_host_fence_atomic_join = false,
+                clock_and_stage_limit = "Source fence is the provider-validated semantic snapshot; provider/HUD/render UTC values are separate local observations, not an atomic join to a native-host fence.",
+                badge_capture = BadgeCapture.ToPayload()
+            };
+        }
+
+        private sealed class CompositionRenderDiagnostic
+        {
+            public CompositionRenderDiagnostic(
+                DateTime observedAtUtc,
+                HudPresentationDiagnostic correlatedPresentation)
+            {
+                ObservedAtUtc = observedAtUtc;
+                CorrelatedPresentation = correlatedPresentation;
+            }
+
+            private DateTime ObservedAtUtc { get; }
+            private HudPresentationDiagnostic CorrelatedPresentation { get; }
+
+            public object ToPayload() => new
+            {
+                stage = "wpf_composition_render_callback_completed",
+                observed_at_utc = ObservedAtUtc,
+                correlated_hud_presentation_at_utc =
+                    CorrelatedPresentation?.CommittedAtUtc,
+                source_fence = CorrelatedPresentation != null
+                    ? CorrelatedPresentation.ToSourceFencePayload()
+                    : null,
+                native_host_fence_atomic_join = false,
+                screen_pixels_observed = false,
+                screen_pixel_observation_limit = "A WPF Composition render callback was observed; no screen-pixel capture was performed."
+            };
         }
 
         private static object ChannelDistribution(PerformanceChannelSnapshot channel) => new

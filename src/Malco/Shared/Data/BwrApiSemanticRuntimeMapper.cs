@@ -40,6 +40,11 @@ namespace Malco.Data
                 Status = source.Message ?? string.Empty
             };
 
+            var larvaByOwner = source.Units
+                .Where(unit => unit.UnitTypeId == 35 &&
+                    unit.HitPointsRaw > 0 && !unit.IsHallucination)
+                .ToLookup(unit => unit.OwnerId);
+
             foreach (BwrApiSemanticUnitV1 unit in source.Units)
             {
                 BwapiBroodWarTables.UnitTypeInfo type =
@@ -62,6 +67,26 @@ namespace Malco.Data
                     IconKey = type.IconKey,
                     IsBuilding = type.IsBuilding,
                     IsCompleted = unit.IsCompleted == true,
+                    IsCompletedObservation = unit.IsCompleted,
+                    IsPowered = unit.IsPowered,
+                    IsInterruptible = unit.IsInterruptible,
+                    LockdownTimer = unit.LockdownTimer,
+                    MaelstromTimer = unit.MaelstromTimer,
+                    StasisTimer = unit.StasisTimer,
+                    SecondaryOrderId = unit.SecondaryOrderId,
+                    SpiderMineCount = unit.SpiderMineCount,
+                    MorphTargetUnitId = unit.UnitTypeId == 36 || unit.UnitTypeId == 59
+                        ? (int?)unit.BuildTypeId
+                        : null,
+                    LarvaRemainingFrames = IsLarvaProducer(unit.UnitTypeId)
+                        ? unit.RemainingTrainFrames
+                        : (uint?)null,
+                    ConnectedLarvaCount = IsLarvaProducer(unit.UnitTypeId)
+                        ? GetConnectedLarvaCount(unit.UnitTag, larvaByOwner[unit.OwnerId])
+                        : (int?)null,
+                    AddonUnitTag = unit.AddonUnitTag,
+                    IsResearching = unit.IsResearching,
+                    IsUpgrading = unit.IsUpgrading,
                     IsWorker = BwapiBroodWarTables.IsWorkerUnitId(unit.UnitTypeId),
                     IsSelected = unit.IsSelected,
                     IsHallucination = unit.IsHallucination,
@@ -103,6 +128,40 @@ namespace Malco.Data
             return runtime;
         }
 
+        private static bool IsLarvaProducer(int unitId) =>
+            unitId == 131 || unitId == 132 || unitId == 133;
+
+        private static int? GetConnectedLarvaCount(
+            string hatcheryUnitTag,
+            IEnumerable<BwrApiSemanticUnitV1> larvae)
+        {
+            if (string.IsNullOrWhiteSpace(hatcheryUnitTag))
+            {
+                return null;
+            }
+
+            // Count only this publication's observed larvae. An unknown parent
+            // can belong to any same-owner Hatchery, so it must not become zero.
+            int count = 0;
+            foreach (var larva in larvae)
+            {
+                if (!larva.HasHatcheryParent.HasValue ||
+                    (larva.HasHatcheryParent == true &&
+                     string.IsNullOrWhiteSpace(larva.HatcheryUnitTag)))
+                {
+                    return null;
+                }
+
+                if (larva.HasHatcheryParent == true &&
+                    string.Equals(larva.HatcheryUnitTag, hatcheryUnitTag, StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         private int ResolvePerspectivePlayerId(
             BwrApiSemanticSnapshotV1 source,
             bool isReplay)
@@ -141,6 +200,7 @@ namespace Malco.Data
             BwrApiRuntimeSnapshot runtime,
             BwrApiSemanticUpgradeV1 source)
         {
+            runtime.UpgradeMaxLevels[source.UpgradeTypeId] = source.MaxLevel;
             int level = source.Level ?? 0;
             int remaining = source.RemainingFrames ?? 0;
             if (level > 0)
@@ -191,6 +251,7 @@ namespace Malco.Data
             BwrApiRuntimeSnapshot runtime,
             BwrApiSemanticTechV1 source)
         {
+            runtime.TechAvailability[source.TechTypeId] = source.Available;
             bool researched = source.Researched == true;
             bool hasUsableProgress =
                 source.InProgress == true && source.RemainingFrames.HasValue;
@@ -217,10 +278,6 @@ namespace Malco.Data
             if (researched || hasUsableProgress)
             {
                 runtime.Upgrades.Add(value);
-            }
-            else if (value.IsAvailable)
-            {
-                runtime.AvailableUpgrades.Add(value);
             }
         }
 

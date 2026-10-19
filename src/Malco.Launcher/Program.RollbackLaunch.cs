@@ -62,7 +62,8 @@ namespace Malco.Launcher
                 null,
                 new RollbackRecord(
                     pending.Candidate,
-                    target));
+                    target,
+                    pending.UpdateRequirement));
             stateStore.DeleteMarker(pending.ActivationId);
             stateStore.Save(rolledBack);
             stagedStore.Delete();

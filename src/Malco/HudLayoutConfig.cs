@@ -24,6 +24,8 @@ namespace Malco
             ItemSettings = new Dictionary<string, HudItemSetting>(StringComparer.OrdinalIgnoreCase);
             AbilityDisplayModes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             ShowTransportCargo = true;
+            ShowLarvaCountdown = true;
+            ShowMorphTargetIcons = true;
         }
 
         public static HudLayoutConfig CreateDefault()
@@ -55,6 +57,7 @@ namespace Malco
             {
                 result.SetCompletionWarning(key, false);
             }
+            result.ShowMorphTargetIcons = true;
             result.SetAbilityDisplayMode("unit:9", "tech:7");
             result.SetAbilityDisplayMode("unit:67", "tech:19");
             result.SetAbilityDisplayMode("unit:71", MalcoPreferenceValues.AbilityEnergy);
@@ -135,6 +138,10 @@ namespace Malco
 
         public bool ShowTransportCargo { get; set; }
 
+        public bool ShowLarvaCountdown { get; set; }
+
+        public bool ShowMorphTargetIcons { get; set; }
+
         public string GetIconSize(string featureKey)
         {
             if (string.Equals(featureKey, HudWidgetRegistry.Units, StringComparison.OrdinalIgnoreCase))
@@ -190,15 +197,6 @@ namespace Malco
             }
 
             return false;
-        }
-
-        public string GetAbilityDisplayMode(int unitId)
-        {
-            string value;
-            var key = "unit:" + unitId.ToString(CultureInfo.InvariantCulture);
-            return AbilityDisplayModes != null && AbilityDisplayModes.TryGetValue(key, out value)
-                ? MalcoPreferenceValues.NormalizeAbilityDisplayModeForUnit(unitId, value)
-                : MalcoPreferenceValues.AbilityHidden;
         }
 
         public bool SetAbilityDisplayMode(string key, string mode)
