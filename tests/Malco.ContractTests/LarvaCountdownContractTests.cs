@@ -23,7 +23,7 @@ namespace Malco.ContractTests
         {
             var sdkAssembly = typeof(BwrApiSemanticUnitV1).Assembly;
             Assert.Equal(
-                "8.0.0-embedded-preview.6",
+                "8.0.0-embedded-preview.7",
                 sdkAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
             Assert.Equal(typeof(uint?), typeof(BwrApiSemanticUnitV1).GetProperty("RemainingTrainFrames").PropertyType);
             Assert.Equal(typeof(bool?), typeof(BwrApiSemanticUnitV1).GetProperty("HasHatcheryParent").PropertyType);

@@ -12,7 +12,7 @@ StarCraft: Brood War 오버레이와 launcher를 제공한다. 게임 상태는 
 - 에그·코쿤 위 변태 대상 유닛 아이콘
 - 표시 항목·아이콘·HUD 위치·크기 설정
 
-SDK는 `BwrApi.Client 8.0.0-embedded-preview.6`(ABI8)이다. 라바 생성 시간은 해처리·레어·하이브의
+SDK는 `BwrApi.Client 8.0.0-embedded-preview.7`(ABI8)이다. 라바 생성 시간은 해처리·레어·하이브의
 `RemainingTrainFrames`, 라바의 `HasHatcheryParent`·`HatcheryUnitTag`를 사용한다. ABI8 원천은
 완료된 해처리 계열과 확인된 해처리→레어·레어→하이브 변태 중에 라바 타이머를 발행한다
 (이전 `larva.3` runtime 수정과 같은 범위). ABI8 runtime의 실제 게임 값은 아직 확인하지 않았다.
@@ -37,9 +37,9 @@ SDK는 `BwrApi.Client 8.0.0-embedded-preview.6`(ABI8)이다. 라바 생성 시�
 
 ABI8은 선택·환각·명령 대상과 유닛 목록 가용성을 미확인(null)으로 구분한다. 확인된 환각만 제외하고,
 유닛 목록이 제공되지 않거나 원천이 일시적으로 없으면(code 4) 마지막 값을 유지한 채 대기로 표시한다.
-`packages.lock.json`의 contentHash는 SDK 소스에서 로컬로 pack한 preview6 기준이다. 다른 빌드의
-preview6 패키지를 쓰면 restore가 hash 불일치로 거부되므로 lock file을 다시 생성한다.
-현재 `%LOCALAPPDATA%\BWRAPI\packages`의 preview6는 로컬 빌드본(SHA 76397DF8…)이며 공식 9A41AB62…와 일치하지 않는다.
+`packages.lock.json`의 contentHash는 SDK 소스에서 로컬로 pack한 preview7 기준이다. 다른 빌드의
+preview7 패키지를 쓰면 restore가 hash 불일치로 거부되므로 lock file을 다시 생성한다.
+preview7은 보안 전용 검사를 제거한 runtime으로 로컬 pack했다(load 시 hash 대조 없음).
 
 연구·업그레이드 알림은 현재 건물 조건으로 열린 기회를 표시한다. 자원·모든 명령 조건을 검사한 즉시 실행 보장은 아니다. 맵에서 금지된 연구와 도달한 맵별 최대 업그레이드는 표시하지 않으며, 생산 건물의 동력·애드온 연결을 확인하지 못하거나 건물이 사용 중이면 회색 차단 상태로 표시한다. 미확인 값은 금지로 단정하지 않는다.
 
