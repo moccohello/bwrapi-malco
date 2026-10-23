@@ -232,6 +232,16 @@ namespace Malco.Bootstrap
             window.Bind(_composition);
             requiredUpdateMonitor?.Start();
             controlServer.Start();
+            if (_installedLaunchAuthorization != null)
+            {
+                // Runs off the UI thread and only touches files after the
+                // launcher that started this process has exited.
+                LauncherRefreshNotice.RefreshIfLauncherOutdated(
+                    () => AppPaths.InstallDirectory,
+                    _installedLaunchAuthorization.LauncherProcessId,
+                    _installedLaunchAuthorization.LauncherStartTimeUtcTicks,
+                    window.Dispatcher);
+            }
             return window;
             }
             catch (Exception ex)

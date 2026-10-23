@@ -40,6 +40,12 @@ namespace Malco.Launcher
         public string Yes => IsKorean ? "예" : "Yes";
         public string No => IsKorean ? "아니요" : "No";
         public string Close => IsKorean ? "닫기" : "Close";
+        public string Download => IsKorean ? "다운로드" : "Download";
+        public string InstallerRequiredMessage => IsKorean
+            ? "새 버전의 Malco가 있지만 지금 설치된 Malco로는 업데이트할 수 없습니다.\r\n\r\n" +
+              "새 설치 프로그램을 내려받아 다시 설치해 주세요.\r\n지금은 현재 버전으로 Malco를 실행합니다."
+            : "A new version of Malco is available, but this installation cannot update to it.\r\n\r\n" +
+              "Download and run the new installer.\r\nMalco will start with the currently installed version for now.";
         public string UpdateFailed => IsKorean
             ? "업데이트를 설치하지 못했습니다."
             : "The update could not be installed.";

@@ -37,19 +37,15 @@ namespace Malco.ContractTests
                 var visual = fixture.Visual();
                 var image = Assert.IsType<StackPanel>(visual.Badge.Child).Children.OfType<Image>().Single();
                 var info = BwapiBroodWarTables.GetUnitTypeInfo(target);
-                var expected = fixture.Icons.GetUnitIcon(new UnitCount { UnitId = target, Name = info.Name, IconKey = info.IconKey });
+                var expected = fixture.Icons.GetCargoUnitIcon(new UnitCount { UnitId = target, Name = info.Name, IconKey = info.IconKey });
                 Assert.NotNull(expected);
                 Assert.Same(expected, image.Source);
-                Assert.Equal(28d, image.Width);
-                Assert.Equal(28d, image.Height);
-                Assert.Equal((byte)220, Assert.IsType<SolidColorBrush>(visual.Badge.Background).Color.A);
-                Assert.Equal(Color.FromRgb(208, 208, 208), Assert.IsType<SolidColorBrush>(visual.Badge.BorderBrush).Color);
-                Assert.Equal(new Thickness(1.5d), visual.Badge.BorderThickness);
-                Assert.Equal(new Thickness(2d), visual.Badge.Padding);
-                Assert.Equal(new CornerRadius(4d), visual.Badge.CornerRadius);
-                var shadow = Assert.IsType<DropShadowEffect>(visual.Badge.Effect);
-                Assert.Equal(Colors.Black, shadow.Color);
-                Assert.True(shadow.IsFrozen);
+                Assert.Equal(22d, image.Width);
+                Assert.Equal(22d, image.Height);
+                // Same quiet chip as cargo and burrow badges.
+                Assert.Equal(new Thickness(0.5d), visual.Badge.BorderThickness);
+                Assert.Equal(new CornerRadius(2d), visual.Badge.CornerRadius);
+                Assert.Null(visual.Badge.Effect);
                 Assert.Equal(Visibility.Visible, visual.Badge.Visibility);
                 Assert.Equal(240d, Canvas.GetLeft(visual.Badge) + visual.LayoutWidth / 2d, 5);
                 Assert.Equal(150d, Canvas.GetTop(visual.Badge) + visual.LayoutHeight / 2d, 5);

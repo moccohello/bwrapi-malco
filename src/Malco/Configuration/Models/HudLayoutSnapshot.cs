@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Malco.Configuration.Models
 {
@@ -78,6 +79,8 @@ namespace Malco.Configuration.Models
         private readonly ReadOnlyDictionary<string, WidgetLayoutSnapshot> _widgets;
         private readonly ReadOnlyDictionary<string, HudItemSettingSnapshot> _itemSettings;
         private readonly ReadOnlyDictionary<string, string> _abilityDisplayModes;
+        private readonly string[] _hiddenSpellTimers;
+        private readonly int[] _hiddenBurrowedUnitIds;
 
         private HudLayoutSnapshot(HudLayoutConfig source)
         {
@@ -95,9 +98,13 @@ namespace Malco.Configuration.Models
             ShowTransportCargo = source.ShowTransportCargo;
             ShowLarvaCountdown = source.ShowLarvaCountdown;
             ShowMorphTargetIcons = source.ShowMorphTargetIcons;
+            ShowSpellTimers = source.ShowSpellTimers;
+            ShowBurrowedUnits = source.ShowBurrowedUnits;
             _widgets = CopyWidgets(source.Widgets);
             _itemSettings = CopyItems(source.ItemSettings);
             _abilityDisplayModes = CopyStrings(source.AbilityDisplayModes);
+            _hiddenSpellTimers = (source.HiddenSpellTimers ?? new List<string>()).ToArray();
+            _hiddenBurrowedUnitIds = (source.HiddenBurrowedUnitIds ?? new List<int>()).ToArray();
         }
 
         public int SchemaVersion { get; }
@@ -113,9 +120,13 @@ namespace Malco.Configuration.Models
         public bool ShowTransportCargo { get; }
         public bool ShowLarvaCountdown { get; }
         public bool ShowMorphTargetIcons { get; }
+        public bool ShowSpellTimers { get; }
+        public bool ShowBurrowedUnits { get; }
         public IReadOnlyDictionary<string, WidgetLayoutSnapshot> Widgets { get { return _widgets; } }
         public IReadOnlyDictionary<string, HudItemSettingSnapshot> ItemSettings { get { return _itemSettings; } }
         public IReadOnlyDictionary<string, string> AbilityDisplayModes { get { return _abilityDisplayModes; } }
+        public IReadOnlyList<string> HiddenSpellTimers { get { return _hiddenSpellTimers; } }
+        public IReadOnlyList<int> HiddenBurrowedUnitIds { get { return _hiddenBurrowedUnitIds; } }
 
         public static HudLayoutSnapshot FromLayout(HudLayoutConfig source)
         {
@@ -138,7 +149,11 @@ namespace Malco.Configuration.Models
                 WorkerCountStyle = WorkerCountStyle,
                 ShowTransportCargo = ShowTransportCargo,
                 ShowLarvaCountdown = ShowLarvaCountdown,
-                ShowMorphTargetIcons = ShowMorphTargetIcons
+                ShowMorphTargetIcons = ShowMorphTargetIcons,
+                ShowSpellTimers = ShowSpellTimers,
+                ShowBurrowedUnits = ShowBurrowedUnits,
+                HiddenSpellTimers = new List<string>(_hiddenSpellTimers),
+                HiddenBurrowedUnitIds = new List<int>(_hiddenBurrowedUnitIds)
             };
             foreach (var entry in _widgets)
             {

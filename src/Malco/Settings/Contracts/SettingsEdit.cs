@@ -19,6 +19,10 @@ namespace Malco.Settings.Contracts
         SetTransportCargoVisible,
         SetLarvaCountdownVisible,
         SetMorphTargetIconsVisible,
+        SetSpellTimersVisible,
+        SetBurrowedUnitsVisible,
+        SetSpellTimerVisible,
+        SetBurrowedUnitVisible,
         ResetWidgetBounds,
         ResetAllWidgetBounds
     }
@@ -229,6 +233,26 @@ namespace Malco.Settings.Contracts
         public static SettingsEdit SetMorphTargetIconsVisible(bool visible)
         {
             return new SettingsEdit(SettingsEditKind.SetMorphTargetIconsVisible, "morph-target-icons", visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetSpellTimersVisible(bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetSpellTimersVisible, "spell-timers", visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetBurrowedUnitsVisible(bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetBurrowedUnitsVisible, "burrowed-unit-icons", visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetSpellTimerVisible(string kind, bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetSpellTimerVisible, kind, visible, string.Empty, 0, default);
+        }
+
+        public static SettingsEdit SetBurrowedUnitVisible(int unitId, bool visible)
+        {
+            return new SettingsEdit(SettingsEditKind.SetBurrowedUnitVisible, "burrowed-unit", visible, string.Empty, unitId, default);
         }
 
         public static SettingsEdit ResetWidgetBounds(string key)

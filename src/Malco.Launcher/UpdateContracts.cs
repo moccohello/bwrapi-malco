@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Malco.Launcher
 {
@@ -200,5 +201,20 @@ namespace Malco.Launcher
     {
         public byte[] SignedBytes { get; set; }
         public byte[] SignatureBytes { get; set; }
+    }
+
+    // A correctly signed release that this installed policy cannot accept.
+    // Only a new installer can raise the policy limits. Every caller that
+    // rejects an invalid feed also rejects IOException, so other paths
+    // still treat it as an ordinary update failure.
+    internal sealed class ReleaseExceedsPolicyException : IOException
+    {
+        public ReleaseExceedsPolicyException(long sequence, string message)
+            : base(message)
+        {
+            Sequence = sequence;
+        }
+
+        public long Sequence { get; }
     }
 }

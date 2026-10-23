@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Malco.Configuration.Models;
 
@@ -161,6 +162,10 @@ namespace Malco.Configuration
                 normalizedAbilityModes[key] = mode;
             }
             layout.AbilityDisplayModes = normalizedAbilityModes;
+            layout.HiddenSpellTimers = (layout.HiddenSpellTimers ?? new List<string>())
+                .Where(Malco.Data.SpellTimerCatalog.IsKnown).Distinct(StringComparer.Ordinal).ToList();
+            layout.HiddenBurrowedUnitIds = (layout.HiddenBurrowedUnitIds ?? new List<int>())
+                .Where(Malco.Data.BurrowableUnitCatalog.IsKnown).Distinct().ToList();
 
             EnforceMinimum(layout, HudWidgetRegistry.Upgrades);
             EnforceMinimum(layout, HudWidgetRegistry.AvailableUpgrades);

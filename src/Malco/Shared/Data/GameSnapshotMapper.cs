@@ -97,6 +97,7 @@ namespace Malco.Data
             var unitSpatialStates = _unitSpatialStateProjector.Build(
                 localUnits,
                 runtime.CompletedUnitCounts);
+            UnitEffectProjector.Append(unitSpatialStates, units, runtime.VisibleStorms);
             var ownedTechnologyRaces = OwnedTechnologyRacePolicy.Resolve(
                 race,
                 unitCounts,

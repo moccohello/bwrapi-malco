@@ -36,6 +36,19 @@ namespace Malco.Data
         public Dictionary<int, int?> UpgradeMaxLevels { get; } = new Dictionary<int, int?>();
 
         public Dictionary<int, bool?> TechAvailability { get; } = new Dictionary<int, bool?>();
+
+        public List<BwrApiRuntimeSpellArea> VisibleStorms { get; } = new List<BwrApiRuntimeSpellArea>();
+    }
+
+    internal sealed class BwrApiRuntimeSpellArea
+    {
+        public string Tag { get; set; }
+
+        public int MapX { get; set; }
+
+        public int MapY { get; set; }
+
+        public int RemainingFrames { get; set; }
     }
 
     internal sealed class BwrApiRuntimeUnit
@@ -83,6 +96,21 @@ namespace Malco.Data
         public byte? MaelstromTimer { get; set; }
 
         public byte? StasisTimer { get; set; }
+
+        public byte? IrradiateTimer { get; set; }
+
+        public byte? PlagueTimer { get; set; }
+
+        public byte? EnsnareTimer { get; set; }
+
+        public byte? DefenseMatrixTimer { get; set; }
+
+        public ushort? RemoveTimer { get; set; }
+
+        public bool? IsBurrowed { get; set; }
+
+        // Owned by the perspective player, or seen and detected by that player.
+        public bool IsVisibleToPerspective { get; set; }
 
         public byte? SecondaryOrderId { get; set; }
 

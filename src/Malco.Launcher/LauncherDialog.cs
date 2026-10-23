@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -29,6 +30,49 @@ namespace Malco.Launcher
                 form.AcceptButton = close;
                 form.CancelButton = close;
                 form.ShowDialog();
+            }
+        }
+
+        public static void ShowInstallerRequired(LauncherLanguage language, Uri downloadUri)
+        {
+            using (var form = CreateShell(language.OptionalTitle, new Size(480, 210), true))
+            {
+                var content = new Label
+                {
+                    Location = new Point(24, 22),
+                    Size = new Size(432, 106),
+                    Text = language.InstallerRequiredMessage
+                };
+                var download = new Button
+                {
+                    DialogResult = DialogResult.OK,
+                    Location = new Point(260, 148),
+                    Size = new Size(96, 34),
+                    Text = language.Download
+                };
+                var close = new Button
+                {
+                    DialogResult = DialogResult.Cancel,
+                    Location = new Point(356, 148),
+                    Size = new Size(96, 34),
+                    Text = language.Close
+                };
+                form.Controls.Add(content);
+                form.Controls.Add(download);
+                form.Controls.Add(close);
+                form.AcceptButton = download;
+                form.CancelButton = close;
+                if (form.ShowDialog() != DialogResult.OK) return;
+            }
+            try
+            {
+                Process.Start(new ProcessStartInfo(downloadUri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
+            }
+            catch (Exception exception) when (
+                exception is System.ComponentModel.Win32Exception ||
+                exception is InvalidOperationException)
+            {
+                // A missing browser association must not block launching Malco.
             }
         }
 

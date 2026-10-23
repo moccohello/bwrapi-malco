@@ -229,10 +229,12 @@ namespace Malco.Settings.Views
                     return TechTreeItem.Unit(0);
                 case FeatureSettingsPreviewKind.Buildings:
                     return TechTreeItem.Building(111);
-                case FeatureSettingsPreviewKind.LarvaCountdown:
+                case FeatureSettingsPreviewKind.ZergProduction:
                     return TechTreeItem.Building(131);
-                case FeatureSettingsPreviewKind.MorphTargetIcons:
-                    return TechTreeItem.Unit(36);
+                case FeatureSettingsPreviewKind.SpellTimers:
+                    return TechTreeItem.Tech("Psionic_Storm");
+                case FeatureSettingsPreviewKind.BurrowedUnits:
+                    return TechTreeItem.Tech("Burrowing");
                 case FeatureSettingsPreviewKind.Transport:
                     return TechTreeItem.Unit(11);
                 case FeatureSettingsPreviewKind.Completed:

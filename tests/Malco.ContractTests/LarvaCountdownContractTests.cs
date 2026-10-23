@@ -23,7 +23,7 @@ namespace Malco.ContractTests
         {
             var sdkAssembly = typeof(BwrApiSemanticUnitV1).Assembly;
             Assert.Equal(
-                "5.0.0-embedded-preview.78-larva.3",
+                "5.0.0-embedded-preview.78",
                 sdkAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
             Assert.Equal(typeof(uint?), typeof(BwrApiSemanticUnitV1).GetProperty("RemainingTrainFrames").PropertyType);
             Assert.Equal(typeof(bool?), typeof(BwrApiSemanticUnitV1).GetProperty("HasHatcheryParent").PropertyType);
@@ -166,6 +166,8 @@ namespace Malco.ContractTests
             var layout = HudLayoutConfig.CreateDefault();
             layout.ShowTransportCargo = false;
             layout.ShowMorphTargetIcons = false;
+            layout.ShowSpellTimers = false;
+            layout.ShowBurrowedUnits = false;
             foreach (var key in layout.AbilityDisplayModes.Keys.ToArray())
             {
                 layout.SetAbilityDisplayMode(key, MalcoPreferenceValues.AbilityHidden);

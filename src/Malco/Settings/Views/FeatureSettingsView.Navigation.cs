@@ -162,10 +162,15 @@ namespace Malco.Settings.Views
                     return UiText.Get("Per unit");
                 case FeatureSettingsDetailKind.TransportCargo:
                     return UiText.Get(_actions.LayoutSnapshot.ShowTransportCargo ? "On" : "Off");
-                case FeatureSettingsDetailKind.LarvaCountdown:
-                    return UiText.Get(_actions.LayoutSnapshot.ShowLarvaCountdown ? "On" : "Off");
-                case FeatureSettingsDetailKind.MorphTargetIcons:
-                    return UiText.Get(_actions.LayoutSnapshot.ShowMorphTargetIcons ? "On" : "Off");
+                case FeatureSettingsDetailKind.ZergProduction:
+                    return UiText.Get(
+                        _actions.LayoutSnapshot.ShowLarvaCountdown || _actions.LayoutSnapshot.ShowMorphTargetIcons
+                            ? "On"
+                            : "Off");
+                case FeatureSettingsDetailKind.SpellTimers:
+                    return UiText.Get(_actions.LayoutSnapshot.ShowSpellTimers ? "On" : "Off");
+                case FeatureSettingsDetailKind.BurrowedUnits:
+                    return UiText.Get(_actions.LayoutSnapshot.ShowBurrowedUnits ? "On" : "Off");
                 default:
                     return UiText.Get(_actions.IsFeatureEnabled(featureKey) ? "On" : "Off");
             }

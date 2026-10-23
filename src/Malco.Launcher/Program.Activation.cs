@@ -6,6 +6,8 @@ namespace Malco.Launcher
 {
     internal static partial class Program
     {
+        private static readonly Uri NewInstallerUri = new Uri("https://horangmalco.com/downloads/malco/latest");
+
         internal enum StartupUpdateDisposition
         {
             Continue,
@@ -155,6 +157,7 @@ namespace Malco.Launcher
                 },
                 (latest, required, fallback) => InstallStartupUpdate(
                     stateStore, stagedStore, verifier, policy, latest, required, fallback),
+                () => LauncherDialog.ShowInstallerRequired(_language, NewInstallerUri),
                 out requiredUpdateRecheck);
         }
 
@@ -164,6 +167,7 @@ namespace Malco.Launcher
             Func<RollbackRecord, bool> verifyRollbackRequired,
             Func<VerifiedEnvelope> fetchLatest,
             Func<VerifiedEnvelope, bool, StartupUpdateResult, StartupUpdateResult> installLatest,
+            Action notifyInstallerRequired,
             out bool requiredUpdateRecheck)
         {
             requiredUpdateRecheck = false;
@@ -209,6 +213,13 @@ namespace Malco.Launcher
             try
             {
                 latest = fetchLatest();
+            }
+            catch (ReleaseExceedsPolicyException exception) when (exception.Sequence > currentSequence)
+            {
+                // The installed launcher cannot accept this release. Point the
+                // user to the new installer, then launch as without an update.
+                notifyInstallerRequired();
+                return fallback;
             }
             catch (Exception exception) when (IsUpdateFailure(exception))
             {

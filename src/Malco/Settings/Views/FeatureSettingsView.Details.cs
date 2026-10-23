@@ -44,15 +44,21 @@ namespace Malco.Settings.Views
                 _detailScroll.ScrollToTop();
                 return;
             }
-            if (feature.DetailKind == FeatureSettingsDetailKind.LarvaCountdown)
+            if (feature.DetailKind == FeatureSettingsDetailKind.ZergProduction)
             {
-                _detailHost.Children.Add(BuildLarvaCountdownSettings());
+                _detailHost.Children.Add(BuildZergProductionSettings());
                 _detailScroll.ScrollToTop();
                 return;
             }
-            if (feature.DetailKind == FeatureSettingsDetailKind.MorphTargetIcons)
+            if (feature.DetailKind == FeatureSettingsDetailKind.SpellTimers)
             {
-                _detailHost.Children.Add(BuildMorphTargetIconsSettings());
+                _detailHost.Children.Add(BuildSpellTimersSettings());
+                _detailScroll.ScrollToTop();
+                return;
+            }
+            if (feature.DetailKind == FeatureSettingsDetailKind.BurrowedUnits)
+            {
+                _detailHost.Children.Add(BuildBurrowedUnitsSettings());
                 _detailScroll.ScrollToTop();
                 return;
             }

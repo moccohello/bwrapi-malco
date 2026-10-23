@@ -45,7 +45,7 @@ namespace Malco.Presentation.Hud.Tiles
         }
 
         public ImageSource GetGrayscaleUnitIcon(UnitCount unit) =>
-            _icons.GetGrayscaleUnitIcon(unit) ?? _grayscaleIcon(_icons.GetUnitIcon(unit));
+            _icons.GetGrayscaleUnitIcon(unit);
 
         public ImageSource GetUpgradeIcon(UpgradeState state) => _icons.GetUpgradeIcon(state);
 

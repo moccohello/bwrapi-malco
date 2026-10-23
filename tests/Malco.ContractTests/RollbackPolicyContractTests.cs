@@ -87,7 +87,7 @@ namespace Malco.ContractTests
                 var result = LauncherProgram.EvaluateStartupUpdate(state, default,
                     _ => throw new InvalidOperationException("Persisted policy needs no verifier"),
                     () => throw new IOException("Offline"),
-                    (_, _, _) => throw new InvalidOperationException("No update to install"), out _);
+                    (_, _, _) => throw new InvalidOperationException("No update to install"), () => { }, out _);
                 Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredUpdateFailed, result.Disposition);
             }
             finally
@@ -117,7 +117,7 @@ namespace Malco.ContractTests
                     candidate, UpdateRequirement.Optional),
                 _ => throw new InvalidOperationException("Persisted policy needs no verifier"),
                 () => throw new IOException("Offline"),
-                (_, _, _) => throw new InvalidOperationException("No online update"), out _);
+                (_, _, _) => throw new InvalidOperationException("No online update"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredActivationPending, result.Disposition);
             Assert.Equal(UpdateRequirement.Required, result.Requirement);
             Assert.True(candidate.SameAs(result.Candidate));
@@ -131,7 +131,7 @@ namespace Malco.ContractTests
                 new LauncherProgram.StartupUpdateResult(LauncherProgram.StartupUpdateDisposition.RequiredActivationPending,
                     state.LastRollback.From, UpdateRequirement.Required),
                 _ => false, () => throw new IOException("Offline"),
-                (_, _, _) => throw new InvalidOperationException("No online update"), out _);
+                (_, _, _) => throw new InvalidOperationException("No online update"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredUpdateFailed, result.Disposition);
             Assert.Null(result.Candidate);
         }
@@ -150,7 +150,7 @@ namespace Malco.ContractTests
                     Assert.True(required);
                     return LauncherProgram.ResolveInstalledStartupUpdateResult(
                         new UpdateDialogResult { Accepted = true, Installed = true }, candidate, required, fallback);
-                }, out _);
+                }, () => { }, out _);
             Assert.True(offered);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredActivationPending, result.Disposition);
             Assert.Equal(UpdateRequirement.Required, result.Requirement);
@@ -171,7 +171,7 @@ namespace Malco.ContractTests
                         Accepted = outcome != "cancel",
                         Installed = false,
                         Error = outcome == "failure" ? new IOException("Download failed") : null
-                    }, null, required, fallback), out _);
+                    }, null, required, fallback), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredUpdateFailed, result.Disposition);
             Assert.Null(result.Candidate);
         }
@@ -181,7 +181,7 @@ namespace Malco.ContractTests
         {
             var result = LauncherProgram.EvaluateStartupUpdate(RequiredRollback(), default, _ => false,
                 () => Latest(2, "required"),
-                (_, _, _) => throw new InvalidOperationException("Must not retry failed release"), out _);
+                (_, _, _) => throw new InvalidOperationException("Must not retry failed release"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredUpdateFailed, result.Disposition);
             Assert.Null(result.Candidate);
         }
@@ -193,7 +193,7 @@ namespace Malco.ContractTests
             var result = LauncherProgram.EvaluateStartupUpdate(RequiredRollback(),
                 new LauncherProgram.StartupUpdateResult(LauncherProgram.StartupUpdateDisposition.Continue, candidate, UpdateRequirement.Optional),
                 _ => false, () => Latest(2, "required"),
-                (_, _, _) => throw new InvalidOperationException("Use newer verified staged release"), out _);
+                (_, _, _) => throw new InvalidOperationException("Use newer verified staged release"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredActivationPending, result.Disposition);
             Assert.True(candidate.SameAs(result.Candidate));
         }
@@ -220,7 +220,7 @@ namespace Malco.ContractTests
             var result = LauncherProgram.EvaluateStartupUpdate(state, default,
                 _ => throw new IOException("Signed evidence missing"),
                 () => throw new IOException("Offline"),
-                (_, _, _) => throw new InvalidOperationException("No update to install"), out _);
+                (_, _, _) => throw new InvalidOperationException("No update to install"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.RequiredUpdateFailed, result.Disposition);
         }
 
@@ -233,7 +233,7 @@ namespace Malco.ContractTests
             var result = LauncherProgram.EvaluateStartupUpdate(state, default,
                 _ => throw new InvalidOperationException("Persisted policy needs no verifier"),
                 () => throw new IOException("Offline"),
-                (_, _, _) => throw new InvalidOperationException("No update to install"), out _);
+                (_, _, _) => throw new InvalidOperationException("No update to install"), () => { }, out _);
             Assert.Equal(LauncherProgram.StartupUpdateDisposition.Continue, result.Disposition);
         }
     }

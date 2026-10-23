@@ -218,6 +218,22 @@ namespace Malco.Data
                     builder.Append(cargo.UnitId.ToString(CultureInfo.InvariantCulture)).Append('x')
                         .Append(cargo.Count.ToString(CultureInfo.InvariantCulture)).Append(',');
                 }
+                builder.Append("][");
+                foreach (var effect in item.Effects ?? new List<UnitEffect>())
+                {
+                    // Only the displayed whole second and damage need a new publication.
+                    builder.Append(effect.Kind).Append('=')
+                        .Append(UnitEffectProjector.DisplaySeconds(effect).ToString(CultureInfo.InvariantCulture)).Append(':')
+                        .Append(effect.RemainingDamage.HasValue
+                            ? effect.RemainingDamage.Value.ToString(CultureInfo.InvariantCulture)
+                            : "-").Append(',');
+                }
+                builder.Append("][");
+                foreach (var burrowed in item.BurrowedUnits ?? new List<CargoUnitCount>())
+                {
+                    builder.Append(burrowed.UnitId.ToString(CultureInfo.InvariantCulture)).Append('x')
+                        .Append(burrowed.Count.ToString(CultureInfo.InvariantCulture)).Append(',');
+                }
                 builder.Append("]|");
             }
         }

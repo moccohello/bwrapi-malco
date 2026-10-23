@@ -81,6 +81,28 @@ namespace Malco.Settings.Controller
             return true;
         }
 
+        private bool SetSpellTimersVisible(bool visible)
+        {
+            if (_layout.ShowSpellTimers == visible)
+            {
+                return false;
+            }
+
+            _layout.ShowSpellTimers = visible;
+            return true;
+        }
+
+        private bool SetBurrowedUnitsVisible(bool visible)
+        {
+            if (_layout.ShowBurrowedUnits == visible)
+            {
+                return false;
+            }
+
+            _layout.ShowBurrowedUnits = visible;
+            return true;
+        }
+
         private bool SetAvailableAlert(string key, bool enabled)
         {
             if (_layout.IsAvailableUpgradeAlertEnabled(key) == enabled)

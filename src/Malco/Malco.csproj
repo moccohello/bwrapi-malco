@@ -5,7 +5,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Malco</RootNamespace>
     <AssemblyName>Malco</AssemblyName>
-    <Version>1.0.10</Version>
+    <Version>1.0.11</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
@@ -27,7 +27,7 @@
     <ApplicationIcon>assets\overlay-mutalisk.ico</ApplicationIcon>
     <!-- The embedded SDK package comes from the local BWRAPI package feed and
          stages its exact product-local runtime. -->
-    <BwrApiClientVersion>5.0.0-embedded-preview.78-larva.3</BwrApiClientVersion>
+    <BwrApiClientVersion>5.0.0-embedded-preview.78</BwrApiClientVersion>
   </PropertyGroup>
 
   <ItemGroup>

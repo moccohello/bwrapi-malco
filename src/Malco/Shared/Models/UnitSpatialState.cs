@@ -10,11 +10,20 @@ namespace Malco.Models
         public int Count { get; set; }
     }
 
+    internal sealed class UnitEffect
+    {
+        public string Kind { get; set; }
+        public int RemainingFrames { get; set; }
+        public int? RemainingDamage { get; set; }
+    }
+
     internal sealed class UnitSpatialState
     {
         public UnitSpatialState()
         {
             Cargo = new List<CargoUnitCount>();
+            Effects = new List<UnitEffect>();
+            BurrowedUnits = new List<CargoUnitCount>();
         }
 
         public string UnitTag { get; set; }
@@ -43,5 +52,8 @@ namespace Malco.Models
         public int? MorphTargetUnitId { get; set; }
         public int? CompletedNuclearMissileCount { get; set; }
         public List<CargoUnitCount> Cargo { get; set; }
+        public List<UnitEffect> Effects { get; set; }
+        // Burrowed Zerg units stacked on this exact spot.
+        public List<CargoUnitCount> BurrowedUnits { get; set; }
     }
 }

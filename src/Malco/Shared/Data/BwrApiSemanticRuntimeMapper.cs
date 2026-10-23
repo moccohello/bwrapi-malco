@@ -73,6 +73,14 @@ namespace Malco.Data
                     LockdownTimer = unit.LockdownTimer,
                     MaelstromTimer = unit.MaelstromTimer,
                     StasisTimer = unit.StasisTimer,
+                    IrradiateTimer = unit.IrradiateTimer,
+                    PlagueTimer = unit.PlagueTimer,
+                    EnsnareTimer = unit.EnsnareTimer,
+                    DefenseMatrixTimer = unit.DefenseMatrixTimer,
+                    RemoveTimer = unit.RemoveTimer,
+                    IsBurrowed = unit.IsBurrowed,
+                    IsVisibleToPerspective = unit.OwnerId == perspectivePlayerId ||
+                        (unit.IsDetected == true && (isReplay || IsTileVisible(source.Map, unit.X, unit.Y))),
                     SecondaryOrderId = unit.SecondaryOrderId,
                     SpiderMineCount = unit.SpiderMineCount,
                     MorphTargetUnitId = unit.UnitTypeId == 36 || unit.UnitTypeId == 59
@@ -96,6 +104,25 @@ namespace Malco.Data
                     HasOrderTarget = unit.HasOrderTarget,
                     OrderTargetMapX = unit.OrderTargetX,
                     OrderTargetMapY = unit.OrderTargetY
+                });
+            }
+
+            foreach (BwrApiSemanticBulletV1 bullet in source.Bullets ?? Array.Empty<BwrApiSemanticBulletV1>())
+            {
+                if (bullet.BulletTypeId != PsionicStormBulletTypeId ||
+                    // The timer wraps to 255 for one frame before the bullet is removed.
+                    bullet.RemoveTimer is not byte remaining || remaining == 0 || remaining >= 0x80 ||
+                    !(isReplay || bullet.IsVisible == true))
+                {
+                    continue;
+                }
+
+                runtime.VisibleStorms.Add(new BwrApiRuntimeSpellArea
+                {
+                    Tag = bullet.BulletTag,
+                    MapX = bullet.Position.X,
+                    MapY = bullet.Position.Y,
+                    RemainingFrames = remaining
                 });
             }
 
@@ -126,6 +153,20 @@ namespace Malco.Data
             }
 
             return runtime;
+        }
+
+        private const ushort PsionicStormBulletTypeId = 157;
+
+        private static bool IsTileVisible(BwrApiSemanticMapV1 map, int x, int y)
+        {
+            if (map == null || !map.Available || map.WidthTiles is not uint width ||
+                x < 0 || y < 0)
+            {
+                return false;
+            }
+
+            long index = (long)(y / 32) * width + x / 32;
+            return x / 32 < width && index < map.Visibility.Count && map.Visibility[(int)index];
         }
 
         private static bool IsLarvaProducer(int unitId) =>

@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using System.Windows.Media.Imaging;
 using Malco.Configuration.Models;
 using Malco.Data;
 using Malco.Models;
@@ -108,7 +107,7 @@ namespace Malco.Presentation.Hud.Workers
         private void UpdateWorkerIconImages(FrozenSemanticSnapshot snapshot)
         {
             var worker = GetWorkerUnit(snapshot);
-            var grayscale = _icons.GetGrayscaleUnitIcon(worker) ?? GrayscaleIcon(_icons.GetUnitIcon(worker));
+            var grayscale = _icons.GetGrayscaleUnitIcon(worker);
             WorkerView.IdleWorkerIcon.Source = grayscale;
             WorkerView.TotalWorkerIcon.Source = grayscale;
         }
@@ -245,42 +244,6 @@ namespace Malco.Presentation.Hud.Workers
             }
 
             return new UnitCount { UnitId = unitId, Name = name, IconKey = iconKey, Count = 1 };
-        }
-
-        private static ImageSource GrayscaleIcon(ImageSource image)
-        {
-            var bitmap = image as BitmapSource;
-            if (bitmap == null)
-            {
-                return image;
-            }
-
-            var source = new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0d);
-            var stride = source.PixelWidth * 4;
-            var pixels = new byte[stride * source.PixelHeight];
-            source.CopyPixels(pixels, stride, 0);
-            for (var i = 0; i < pixels.Length; i += 4)
-            {
-                var blue = pixels[i];
-                var green = pixels[i + 1];
-                var red = pixels[i + 2];
-                var gray = (byte)((red * 299 + green * 587 + blue * 114) / 1000);
-                pixels[i] = gray;
-                pixels[i + 1] = gray;
-                pixels[i + 2] = gray;
-            }
-
-            var result = BitmapSource.Create(
-                source.PixelWidth,
-                source.PixelHeight,
-                source.DpiX,
-                source.DpiY,
-                PixelFormats.Bgra32,
-                null,
-                pixels,
-                stride);
-            result.Freeze();
-            return result;
         }
     }
 }

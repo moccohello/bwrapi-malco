@@ -23,9 +23,13 @@ namespace Malco
             Widgets = new Dictionary<string, WidgetLayout>(StringComparer.OrdinalIgnoreCase);
             ItemSettings = new Dictionary<string, HudItemSetting>(StringComparer.OrdinalIgnoreCase);
             AbilityDisplayModes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            HiddenSpellTimers = new List<string>();
+            HiddenBurrowedUnitIds = new List<int>();
             ShowTransportCargo = true;
             ShowLarvaCountdown = true;
             ShowMorphTargetIcons = true;
+            ShowSpellTimers = true;
+            ShowBurrowedUnits = true;
         }
 
         public static HudLayoutConfig CreateDefault()
@@ -58,6 +62,8 @@ namespace Malco
                 result.SetCompletionWarning(key, false);
             }
             result.ShowMorphTargetIcons = true;
+            result.ShowSpellTimers = true;
+            result.ShowBurrowedUnits = true;
             result.SetAbilityDisplayMode("unit:9", "tech:7");
             result.SetAbilityDisplayMode("unit:67", "tech:19");
             result.SetAbilityDisplayMode("unit:71", MalcoPreferenceValues.AbilityEnergy);
@@ -141,6 +147,50 @@ namespace Malco
         public bool ShowLarvaCountdown { get; set; }
 
         public bool ShowMorphTargetIcons { get; set; }
+
+        public bool ShowSpellTimers { get; set; }
+
+        public bool ShowBurrowedUnits { get; set; }
+
+        public List<string> HiddenSpellTimers { get; set; }
+
+        public List<int> HiddenBurrowedUnitIds { get; set; }
+
+        public bool SetSpellTimerVisible(string kind, bool visible)
+        {
+            if (!Data.SpellTimerCatalog.IsKnown(kind))
+            {
+                return false;
+            }
+            if (HiddenSpellTimers == null)
+            {
+                HiddenSpellTimers = new List<string>();
+            }
+            return visible ? HiddenSpellTimers.RemoveAll(item => item == kind) > 0 : AddOnce(HiddenSpellTimers, kind);
+        }
+
+        public bool SetBurrowedUnitVisible(int unitId, bool visible)
+        {
+            if (!Data.BurrowableUnitCatalog.IsKnown(unitId))
+            {
+                return false;
+            }
+            if (HiddenBurrowedUnitIds == null)
+            {
+                HiddenBurrowedUnitIds = new List<int>();
+            }
+            return visible ? HiddenBurrowedUnitIds.RemoveAll(item => item == unitId) > 0 : AddOnce(HiddenBurrowedUnitIds, unitId);
+        }
+
+        private static bool AddOnce<T>(List<T> list, T value)
+        {
+            if (list.Contains(value))
+            {
+                return false;
+            }
+            list.Add(value);
+            return true;
+        }
 
         public string GetIconSize(string featureKey)
         {

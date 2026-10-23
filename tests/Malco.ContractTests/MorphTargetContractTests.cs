@@ -261,6 +261,8 @@ namespace Malco.ContractTests
         {
             layout.ShowTransportCargo = false;
             layout.ShowLarvaCountdown = false;
+            layout.ShowSpellTimers = false;
+            layout.ShowBurrowedUnits = false;
             foreach (var key in layout.AbilityDisplayModes.Keys.ToArray())
             {
                 layout.SetAbilityDisplayMode(key, MalcoPreferenceValues.AbilityHidden);

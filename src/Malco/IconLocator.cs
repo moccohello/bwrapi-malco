@@ -19,7 +19,7 @@ namespace Malco
         };
 
         private readonly string _iconRoot;
-        private readonly string _grayscaleIconRoot;
+        private readonly Dictionary<ImageSource, ImageSource> _grayscaleCache = new Dictionary<ImageSource, ImageSource>();
         private readonly Dictionary<string, string> _upgradeFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ImageSource> _cache = new Dictionary<string, ImageSource>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ImageSource> _cargoIconCache = new Dictionary<string, ImageSource>(StringComparer.OrdinalIgnoreCase);
@@ -28,9 +28,6 @@ namespace Malco
         public IconLocator()
         {
             _iconRoot = FindIconRoot(AppDomain.CurrentDomain.BaseDirectory);
-            _grayscaleIconRoot = string.IsNullOrEmpty(_iconRoot)
-                ? string.Empty
-                : Path.Combine(Path.GetDirectoryName(_iconRoot), "starcraft-icons-gray");
             IndexUpgradeFiles();
         }
 
@@ -48,16 +45,20 @@ namespace Malco
 
         public ImageSource GetGrayscaleUnitIcon(UnitCount unit)
         {
-            if (unit == null ||
-                string.IsNullOrEmpty(unit.IconKey) ||
-                string.IsNullOrEmpty(_grayscaleIconRoot))
+            var icon = GetUnitIcon(unit);
+            if (icon == null)
             {
                 return null;
             }
 
-            var relativePath = unit.IconKey.Replace('/', Path.DirectorySeparatorChar) + ".png";
-            return Load(Path.Combine(_grayscaleIconRoot, "units", relativePath)) ??
-                   Load(Path.Combine(_grayscaleIconRoot, "construction", relativePath));
+            ImageSource cached;
+            if (!_grayscaleCache.TryGetValue(icon, out cached))
+            {
+                cached = HudOverlayWindow.GrayscaleIcon(icon);
+                _grayscaleCache[icon] = cached;
+            }
+
+            return cached;
         }
 
         public ImageSource GetCargoUnitIcon(UnitCount unit)

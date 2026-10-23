@@ -206,9 +206,15 @@ namespace Malco.Launcher
                 var archive = new ReleaseArchive
                 {
                     Uri = ParseHttpsUri(RequireString(archiveObject, "url", 2048), "archive URL"),
-                    Length = RequireInt64(archiveObject, "length", 1, policy.MaximumArchiveBytes),
+                    Length = RequireInt64(archiveObject, "length", 1, long.MaxValue),
                     Sha256 = RequireSha256(archiveObject, "sha256")
                 };
+                // The signature is already verified, so limit failures below
+                // identify a genuine release that needs a newer installer.
+                if (archive.Length > policy.MaximumArchiveBytes)
+                {
+                    throw new ReleaseExceedsPolicyException(sequence, "The release archive exceeds the launcher policy.");
+                }
 
                 var filesElement = RequireProperty(root, "files");
                 if (filesElement.ValueKind != JsonValueKind.Array)
@@ -223,7 +229,7 @@ namespace Malco.Launcher
                 {
                     if (files.Count >= policy.MaximumFiles)
                     {
-                        throw new InvalidDataException("The release declares too many files.");
+                        throw new ReleaseExceedsPolicyException(sequence, "The release declares too many files.");
                     }
                     var fileObject = RequireObject(item, "release file");
                     RequireProperties(fileObject, "path", "length", "sha256");
@@ -237,10 +243,10 @@ namespace Malco.Launcher
                         throw new InvalidDataException("Release files must be strictly sorted by ordinal path.");
                     }
                     previousPath = path;
-                    var length = RequireInt64(fileObject, "length", 0, policy.MaximumArchiveBytes);
-                    if (totalLength > policy.MaximumPayloadBytes - length)
+                    var length = RequireInt64(fileObject, "length", 0, long.MaxValue);
+                    if (length > policy.MaximumArchiveBytes || totalLength > policy.MaximumPayloadBytes - length)
                     {
-                        throw new InvalidDataException("The declared release payload is too large.");
+                        throw new ReleaseExceedsPolicyException(sequence, "The declared release payload is too large.");
                     }
                     totalLength += length;
                     files.Add(new ReleaseFile

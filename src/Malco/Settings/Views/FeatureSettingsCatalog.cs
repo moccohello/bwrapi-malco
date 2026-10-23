@@ -18,8 +18,9 @@ namespace Malco.Settings.Views
         Standard,
         ResourceWorkers,
         TransportCargo,
-        LarvaCountdown,
-        MorphTargetIcons,
+        ZergProduction,
+        SpellTimers,
+        BurrowedUnits,
         AbilityStatus,
         General
     }
@@ -32,8 +33,9 @@ namespace Malco.Settings.Views
         Completed,
         Available,
         Progress,
-        LarvaCountdown,
-        MorphTargetIcons,
+        ZergProduction,
+        SpellTimers,
+        BurrowedUnits,
         Command,
         Rally,
         Resources,
@@ -96,8 +98,9 @@ namespace Malco.Settings.Views
         public const string GeneralKey = "general";
         public const string ResourceWorkersKey = "resource-workers";
         public const string TransportCargoKey = "transport-cargo";
-        public const string LarvaCountdownKey = "larva-countdown";
-        public const string MorphTargetIconsKey = "morph-target-icons";
+        public const string ZergProductionKey = "zerg-production";
+        public const string SpellTimersKey = "spell-timers";
+        public const string BurrowedUnitsKey = "burrowed-unit-icons";
         public const string AbilityStatusKey = "ability-status";
 
         private static readonly FeatureItemPolicy UnitsPolicy = new FeatureItemPolicy(
@@ -220,22 +223,32 @@ namespace Malco.Settings.Views
                     false,
                     true),
                 new FeatureSettingsDefinition(
-                    LarvaCountdownKey,
-                    "Larva countdown",
-                    "Show the in-game time remaining until the next larva spawns below Hatcheries, Lairs, and Hives.",
-                    FeatureSettingsPreviewKind.LarvaCountdown,
+                    ZergProductionKey,
+                    "Larva and morph",
+                    "Show larva spawn countdowns below Hatcheries, Lairs and Hives, and the target unit icon above eggs and cocoons.",
+                    FeatureSettingsPreviewKind.ZergProduction,
                     FeatureSettingsGroup.Guides,
-                    FeatureSettingsDetailKind.LarvaCountdown,
+                    FeatureSettingsDetailKind.ZergProduction,
                     default,
                     false,
                     true),
                 new FeatureSettingsDefinition(
-                    MorphTargetIconsKey,
-                    "Morph target icons",
-                    "Show the target unit icon above eggs and cocoons.",
-                    FeatureSettingsPreviewKind.MorphTargetIcons,
+                    SpellTimersKey,
+                    "Spell timers",
+                    "Show the remaining time of lasting spells (Lockdown, Stasis Field, Maelstrom, Irradiate with remaining damage, Dark Swarm, Disruption Web, Psionic Storm, Defensive Matrix, Ensnare, Plague) on visible units and spell areas.",
+                    FeatureSettingsPreviewKind.SpellTimers,
                     FeatureSettingsGroup.Guides,
-                    FeatureSettingsDetailKind.MorphTargetIcons,
+                    FeatureSettingsDetailKind.SpellTimers,
+                    default,
+                    false,
+                    true),
+                new FeatureSettingsDefinition(
+                    BurrowedUnitsKey,
+                    "Burrowed unit icons",
+                    "Show icons on burrowed Zerg units. Enemy units are shown only while detected. Units stacked on the same spot show a count.",
+                    FeatureSettingsPreviewKind.BurrowedUnits,
+                    FeatureSettingsGroup.Guides,
+                    FeatureSettingsDetailKind.BurrowedUnits,
                     default,
                     false,
                     true),

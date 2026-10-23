@@ -6,6 +6,11 @@ param(
     [Parameter(Mandatory)]
     [string]$BwrApiPackageDirectory,
 
+    # The launcher and its policy ride along so an update can refresh an
+    # older install root without running Setup again.
+    [Parameter(Mandatory)]
+    [string]$LauncherExecutable,
+
     [Parameter(Mandatory)]
     [ValidateLength(1, 128)]
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]*$')]
@@ -254,6 +259,12 @@ try {
     if (-not (Test-Path -LiteralPath $runtimeContractDestination -PathType Leaf)) {
         Copy-Item -LiteralPath $runtimeContractSource -Destination $runtimeContractDestination
     }
+    $launcherDestination = Join-Path $stagingRoot "launcher"
+    New-Item -ItemType Directory -Path $launcherDestination -Force | Out-Null
+    Copy-Item -LiteralPath (Resolve-RequiredFile $LauncherExecutable "Malco launcher") `
+        -Destination (Join-Path $launcherDestination "Malco.Launcher.exe")
+    Copy-Item -LiteralPath (Resolve-RequiredFile (Join-Path $PSScriptRoot "packaging\launcher-policy.json") "Launcher policy") `
+        -Destination (Join-Path $launcherDestination "launcher-policy.json")
     $licenseDestination = Join-Path $stagingRoot "LICENSE.txt"
     if (-not (Test-Path -LiteralPath $licenseDestination -PathType Leaf)) {
         Copy-Item -LiteralPath $licenseSource -Destination $licenseDestination

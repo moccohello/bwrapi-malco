@@ -16,25 +16,12 @@ namespace Malco.Presentation.Spatial
 {
     internal sealed partial class SpatialPresenter
     {
-        private static readonly SolidColorBrush MorphTargetBackground = FrozenBrush(Color.FromArgb(220, 9, 12, 18));
-        private static readonly SolidColorBrush MorphTargetBorder = FrozenBrush(Color.FromRgb(208, 208, 208));
-        private static readonly DropShadowEffect MorphTargetShadow = CreateMorphTargetShadow();
-
-        private static DropShadowEffect CreateMorphTargetShadow()
-        {
-            var shadow = new DropShadowEffect
-            {
-                Color = Colors.Black, Opacity = 0.9d, BlurRadius = 5d, ShadowDepth = 1d
-            };
-            shadow.Freeze();
-            return shadow;
-        }
-
         private Dictionary<string, Tuple<UnitSpatialState, string>> BuildUnitOverlays(
             FrozenSemanticSnapshot snapshot,
             SpatialFeaturePreferences preferences)
         {
             var result = new Dictionary<string, Tuple<UnitSpatialState, string>>(StringComparer.Ordinal);
+            _overlayPreferences = preferences.DisplayPreferences;
             if (snapshot == null) return result;
             foreach (var state in snapshot.UnitSpatialStates ?? Array.Empty<UnitSpatialState>())
             {
@@ -51,16 +38,53 @@ namespace Malco.Presentation.Spatial
                         .Select(item => item.UnitId.ToString(CultureInfo.InvariantCulture) + "x" +
                                         item.Count.ToString(CultureInfo.InvariantCulture)))
                     : string.Empty;
+                var effectToken = BuildEffectToken(state, preferences.DisplayPreferences);
+                var burrowToken = BuildBurrowToken(state, preferences.DisplayPreferences);
                 if (string.IsNullOrEmpty(abilityToken) && string.IsNullOrEmpty(cargoToken) &&
-                    string.IsNullOrEmpty(larvaToken) && string.IsNullOrEmpty(morphToken)) continue;
+                    string.IsNullOrEmpty(larvaToken) && string.IsNullOrEmpty(morphToken) &&
+                    string.IsNullOrEmpty(effectToken) && string.IsNullOrEmpty(burrowToken)) continue;
+                var localized = !string.IsNullOrEmpty(larvaToken) || !string.IsNullOrEmpty(morphToken) ||
+                                !string.IsNullOrEmpty(effectToken) || !string.IsNullOrEmpty(burrowToken);
                 result[state.UnitTag] = Tuple.Create(state, abilityToken + ";cargo=" + cargoToken +
                     (string.IsNullOrEmpty(larvaToken) ? string.Empty : ";" + larvaToken) +
                     (string.IsNullOrEmpty(morphToken) ? string.Empty : ";" + morphToken) +
-                    (string.IsNullOrEmpty(larvaToken) && string.IsNullOrEmpty(morphToken)
-                        ? string.Empty : ";language=" + UiText.CurrentLanguage));
+                    (string.IsNullOrEmpty(effectToken) ? string.Empty : ";" + effectToken) +
+                    (string.IsNullOrEmpty(burrowToken) ? string.Empty : ";" + burrowToken) +
+                    (localized ? ";language=" + UiText.CurrentLanguage : string.Empty));
             }
             return result;
         }
+
+        internal static string BuildEffectToken(UnitSpatialState state, HudDisplayPreferences preferences)
+        {
+            var effects = VisibleEffects(state, preferences).ToList();
+            if (effects.Count == 0) return string.Empty;
+            return "fx=" + string.Join(",", effects.Select(effect => effect.Kind + ":" +
+                UnitEffectProjector.DisplaySeconds(effect).ToString(CultureInfo.InvariantCulture) +
+                (effect.RemainingDamage.HasValue
+                    ? ":" + effect.RemainingDamage.Value.ToString(CultureInfo.InvariantCulture)
+                    : string.Empty)));
+        }
+
+        internal static string BuildBurrowToken(UnitSpatialState state, HudDisplayPreferences preferences)
+        {
+            var units = VisibleBurrowedUnits(state, preferences).ToList();
+            if (units.Count == 0) return string.Empty;
+            return "burrow=" + string.Join(",", units.Select(item =>
+                item.UnitId.ToString(CultureInfo.InvariantCulture) + "x" +
+                item.Count.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        // The content key is built from these filtered lists, so a badge is
+        // rebuilt whenever a per-item setting changes what it shows.
+        private static IEnumerable<UnitEffect> VisibleEffects(UnitSpatialState state, HudDisplayPreferences preferences) =>
+            (state?.Effects ?? Enumerable.Empty<UnitEffect>())
+                .Where(effect => preferences != null && preferences.IsSpellTimerShown(effect.Kind))
+                .OrderBy(effect => effect.Kind, StringComparer.Ordinal);
+
+        private static IEnumerable<CargoUnitCount> VisibleBurrowedUnits(UnitSpatialState state, HudDisplayPreferences preferences) =>
+            (state?.BurrowedUnits ?? Enumerable.Empty<CargoUnitCount>())
+                .Where(item => preferences != null && preferences.IsBurrowedUnitShown(item.UnitId));
 
         internal static string BuildMorphTargetToken(UnitSpatialState state, HudDisplayPreferences preferences)
         {
@@ -78,7 +102,8 @@ namespace Malco.Presentation.Spatial
         private ImageSource GetMorphTargetIcon(int target)
         {
             var type = BwapiBroodWarTables.GetUnitTypeInfo(target);
-            return _icons?.GetUnitIcon(new UnitCount
+            // Same outlined icon as cargo and burrow badges so it sits quietly on the egg.
+            return _icons?.GetCargoUnitIcon(new UnitCount
             {
                 UnitId = target, Name = type.Name, IconKey = type.IconKey
             });
@@ -266,26 +291,106 @@ namespace Malco.Presentation.Spatial
                 var target = state.MorphTargetUnitId.Value;
                 stack.Children.Add(new Image
                 {
-                    Source = GetMorphTargetIcon(target), Width = 28d, Height = 28d,
+                    Source = GetMorphTargetIcon(target), Width = 22d, Height = 22d,
                     Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center,
                     ToolTip = UiText.GameName(BwapiBroodWarTables.GetUnitTypeInfo(target).Name)
                 });
             }
 
+            if (contentKey.IndexOf(";burrow=", StringComparison.Ordinal) >= 0)
+                stack.Children.Add(BuildUnitCountRow(VisibleBurrowedUnits(state, _overlayPreferences)));
+
+            var effectMarker = contentKey.IndexOf(";fx=", StringComparison.Ordinal);
+            if (effectMarker >= 0)
+            {
+                foreach (var effect in VisibleEffects(state, _overlayPreferences))
+                    stack.Children.Add(BuildEffectRow(effect));
+            }
+
             var abilityReadyOnly = contentKey.StartsWith("ready=", StringComparison.Ordinal) &&
-                                   cargo.Count == 0 && larvaMarker < 0 && morphMarker < 0;
-            badge.Background = morphMarker >= 0 ? MorphTargetBackground : abilityReadyOnly
+                                   cargo.Count == 0 && larvaMarker < 0 && morphMarker < 0 && effectMarker < 0;
+            badge.Background = abilityReadyOnly
                 ? Brushes.Transparent
                 : cargo.Count != 0
                     ? TransportCargoOverlayBackground
                     : UnitOverlayBackground;
-            badge.BorderBrush = morphMarker >= 0 ? MorphTargetBorder : abilityReadyOnly ? Brushes.Transparent : _style.ChipBorder;
-            badge.BorderThickness = morphMarker >= 0 ? new Thickness(1.5d) : abilityReadyOnly ? new Thickness(0d) : new Thickness(0.5d);
-            badge.CornerRadius = morphMarker >= 0 ? new CornerRadius(4d) : abilityReadyOnly ? new CornerRadius(0d) : new CornerRadius(2d);
-            badge.Padding = morphMarker >= 0 ? new Thickness(2d) : abilityReadyOnly ? new Thickness(1d) : new Thickness(1d, 0.5d, 1d, 0.5d);
-            badge.Effect = morphMarker >= 0 ? MorphTargetShadow : null;
+            badge.BorderBrush = abilityReadyOnly ? Brushes.Transparent : _style.ChipBorder;
+            badge.BorderThickness = abilityReadyOnly ? new Thickness(0d) : new Thickness(0.5d);
+            badge.CornerRadius = abilityReadyOnly ? new CornerRadius(0d) : new CornerRadius(2d);
+            badge.Padding = abilityReadyOnly ? new Thickness(1d) : new Thickness(1d, 0.5d, 1d, 0.5d);
+            badge.Effect = null;
             badge.Child = stack;
             badge.ToolTip = state.Name;
+        }
+
+        private FrameworkElement BuildEffectRow(UnitEffect effect)
+        {
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                ToolTip = UiText.GameName(effect.Kind)
+            };
+            var icon = _icons?.GetUpgradeIcon(new UpgradeState { Name = effect.Kind });
+            if (icon != null)
+            {
+                row.Children.Add(new Image
+                {
+                    Source = icon, Width = 16d, Height = 16d, Stretch = Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
+                });
+            }
+            var text = UnitEffectProjector.DisplaySeconds(effect).ToString(CultureInfo.InvariantCulture) + "s" +
+                       (effect.RemainingDamage.HasValue
+                           ? " · " + effect.RemainingDamage.Value.ToString(CultureInfo.InvariantCulture)
+                           : string.Empty);
+            row.Children.Add(new TextBlock
+            {
+                Text = text,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 11d,
+                FontWeight = FontWeights.Bold,
+                Foreground = _style.Text,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(2d, 0d, 0d, 0d),
+                Effect = ResourceTextShadow()
+            });
+            return row;
+        }
+
+        private FrameworkElement BuildUnitCountRow(IEnumerable<CargoUnitCount> units)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+            foreach (var item in units ?? Enumerable.Empty<CargoUnitCount>())
+            {
+                var source = _icons?.GetCargoUnitIcon(new UnitCount
+                {
+                    UnitId = item.UnitId, Name = item.Name, IconKey = item.IconKey, Count = item.Count
+                });
+                if (source != null)
+                {
+                    row.Children.Add(new Image
+                    {
+                        Source = source, Width = 22d, Height = 22d, Stretch = Stretch.Uniform,
+                        ToolTip = UiText.GameName(item.Name)
+                    });
+                }
+                if (item.Count > 1)
+                {
+                    row.Children.Add(new TextBlock
+                    {
+                        Text = "×" + item.Count.ToString(CultureInfo.InvariantCulture),
+                        FontFamily = new FontFamily("Segoe UI"),
+                        FontSize = 11d,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = _style.Text,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(0.5d, 0d, 1d, 0d),
+                        Effect = ResourceTextShadow()
+                    });
+                }
+            }
+            return row;
         }
 
         private static FrameworkElement BuildAbilityReadyIndicator(string ability)

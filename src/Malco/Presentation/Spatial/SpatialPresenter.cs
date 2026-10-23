@@ -48,6 +48,10 @@ namespace Malco.Presentation.Spatial
         private bool _contentInvalidated;
         private bool _showLarvaCountdown;
         private bool _showMorphTargetIcons;
+        private bool _showSpellTimers;
+        private bool _showBurrowedUnits;
+        private string _hiddenOverlayItems = string.Empty;
+        private HudDisplayPreferences _overlayPreferences;
         private string _unitOverlayLanguage;
 
         public SpatialPresenter(SpatialVisualTree tree, SpatialVisualStyle style, IconLocator icons)
@@ -95,12 +99,21 @@ namespace Malco.Presentation.Spatial
                                     state.Snapshot.IsInMatch;
             var showLarvaCountdown = state.Preferences.DisplayPreferences?.ShowLarvaCountdown == true;
             var showMorphTargetIcons = state.Preferences.DisplayPreferences?.ShowMorphTargetIcons == true;
+            var showSpellTimers = state.Preferences.DisplayPreferences?.ShowSpellTimers == true;
+            var showBurrowedUnits = state.Preferences.DisplayPreferences?.ShowBurrowedUnits == true;
+            var hiddenOverlayItems = state.Preferences.DisplayPreferences?.HiddenOverlayItemsKey ?? string.Empty;
             var unitOverlayPresentationChanged = _showLarvaCountdown != showLarvaCountdown ||
                 _showMorphTargetIcons != showMorphTargetIcons ||
-                ((showLarvaCountdown || showMorphTargetIcons) &&
+                _showSpellTimers != showSpellTimers ||
+                _showBurrowedUnits != showBurrowedUnits ||
+                !string.Equals(_hiddenOverlayItems, hiddenOverlayItems, StringComparison.Ordinal) ||
+                ((showLarvaCountdown || showMorphTargetIcons || showSpellTimers || showBurrowedUnits) &&
                     !string.Equals(_unitOverlayLanguage, UiText.CurrentLanguage, StringComparison.Ordinal));
             _showLarvaCountdown = showLarvaCountdown;
             _showMorphTargetIcons = showMorphTargetIcons;
+            _showSpellTimers = showSpellTimers;
+            _showBurrowedUnits = showBurrowedUnits;
+            _hiddenOverlayItems = hiddenOverlayItems;
             _unitOverlayLanguage = UiText.CurrentLanguage;
 
             var semanticContentDirty =

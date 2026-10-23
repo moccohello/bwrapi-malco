@@ -194,6 +194,14 @@ namespace Malco.Settings.Controller
                     return SetLarvaCountdownVisible(edit.BooleanValue);
                 case SettingsEditKind.SetMorphTargetIconsVisible:
                     return SetMorphTargetIconsVisible(edit.BooleanValue);
+                case SettingsEditKind.SetSpellTimersVisible:
+                    return SetSpellTimersVisible(edit.BooleanValue);
+                case SettingsEditKind.SetBurrowedUnitsVisible:
+                    return SetBurrowedUnitsVisible(edit.BooleanValue);
+                case SettingsEditKind.SetSpellTimerVisible:
+                    return _layout.SetSpellTimerVisible(edit.Key, edit.BooleanValue);
+                case SettingsEditKind.SetBurrowedUnitVisible:
+                    return _layout.SetBurrowedUnitVisible(edit.IntegerValue, edit.BooleanValue);
                 case SettingsEditKind.ResetWidgetBounds:
                     return ResetWidgetBounds(edit.Key);
                 case SettingsEditKind.ResetAllWidgetBounds:

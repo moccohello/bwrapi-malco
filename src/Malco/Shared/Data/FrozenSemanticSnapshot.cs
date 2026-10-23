@@ -150,14 +150,26 @@ namespace Malco.Data
                 ConnectedLarvaCount = value.ConnectedLarvaCount,
                 MorphTargetUnitId = value.MorphTargetUnitId,
                 CompletedNuclearMissileCount = value.CompletedNuclearMissileCount,
-                Cargo = (value.Cargo ?? new List<CargoUnitCount>()).Select(item => new CargoUnitCount
+                Cargo = CloneUnitCounts(value.Cargo),
+                Effects = (value.Effects ?? new List<UnitEffect>()).Select(item => new UnitEffect
                 {
-                    UnitId = item.UnitId,
-                    Name = item.Name,
-                    IconKey = item.IconKey,
-                    Count = item.Count
-                }).ToList()
+                    Kind = item.Kind,
+                    RemainingFrames = item.RemainingFrames,
+                    RemainingDamage = item.RemainingDamage
+                }).ToList(),
+                BurrowedUnits = CloneUnitCounts(value.BurrowedUnits)
             };
+        }
+
+        private static List<CargoUnitCount> CloneUnitCounts(List<CargoUnitCount> value)
+        {
+            return (value ?? new List<CargoUnitCount>()).Select(item => new CargoUnitCount
+            {
+                UnitId = item.UnitId,
+                Name = item.Name,
+                IconKey = item.IconKey,
+                Count = item.Count
+            }).ToList();
         }
     }
 }

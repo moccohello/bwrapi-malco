@@ -11,6 +11,8 @@ namespace Malco.Configuration.Models
         private readonly HashSet<string> _disabledAvailableAlertKeys;
         private readonly HashSet<string> _disabledCompletionWarningKeys;
         private readonly Dictionary<int, string> _abilityDisplayModes;
+        private readonly HashSet<string> _hiddenSpellTimers;
+        private readonly HashSet<int> _hiddenBurrowedUnitIds;
 
         private HudDisplayPreferences(
             IEnumerable<string> hiddenItemKeys,
@@ -21,6 +23,10 @@ namespace Malco.Configuration.Models
             bool showTransportCargo,
             bool showLarvaCountdown,
             bool showMorphTargetIcons,
+            bool showSpellTimers,
+            bool showBurrowedUnits,
+            IEnumerable<string> hiddenSpellTimers,
+            IEnumerable<int> hiddenBurrowedUnitIds,
             string workerCountStyle,
             string unitIconSize,
             string buildingIconSize,
@@ -40,6 +46,10 @@ namespace Malco.Configuration.Models
             ShowTransportCargo = showTransportCargo;
             ShowLarvaCountdown = showLarvaCountdown;
             ShowMorphTargetIcons = showMorphTargetIcons;
+            ShowSpellTimers = showSpellTimers;
+            ShowBurrowedUnits = showBurrowedUnits;
+            _hiddenSpellTimers = new HashSet<string>(hiddenSpellTimers ?? Enumerable.Empty<string>(), StringComparer.Ordinal);
+            _hiddenBurrowedUnitIds = new HashSet<int>(hiddenBurrowedUnitIds ?? Enumerable.Empty<int>());
             WorkerCountStyle = MalcoPreferenceValues.NormalizeWorkerCountStyle(workerCountStyle);
             UnitIconSize = MalcoPreferenceValues.NormalizeIconSize(unitIconSize, MalcoPreferenceValues.IconLarge);
             BuildingIconSize = MalcoPreferenceValues.NormalizeIconSize(buildingIconSize, MalcoPreferenceValues.IconLarge);
@@ -62,6 +72,17 @@ namespace Malco.Configuration.Models
         public bool IsCompletionWarningEnabled(string key) =>
             string.IsNullOrEmpty(key) || !_disabledCompletionWarningKeys.Contains(key);
 
+        public bool IsSpellTimerShown(string kind) =>
+            ShowSpellTimers && !_hiddenSpellTimers.Contains(kind ?? string.Empty);
+
+        public bool IsBurrowedUnitShown(int unitId) =>
+            ShowBurrowedUnits && !_hiddenBurrowedUnitIds.Contains(unitId);
+
+        // Changes whenever a per-item spell or burrow setting changes.
+        public string HiddenOverlayItemsKey =>
+            string.Join(",", _hiddenSpellTimers.OrderBy(kind => kind, StringComparer.Ordinal)) + "|" +
+            string.Join(",", _hiddenBurrowedUnitIds.OrderBy(id => id));
+
         public UpgradeCompletionDisplayMode CompletionDisplayMode { get; }
 
         public int CompletionCountdownSeconds { get; }
@@ -72,10 +93,16 @@ namespace Malco.Configuration.Models
 
         public bool ShowMorphTargetIcons { get; }
 
+        public bool ShowSpellTimers { get; }
+
+        public bool ShowBurrowedUnits { get; }
+
         public bool HasUnitSpatialOverlays =>
             ShowTransportCargo ||
             ShowLarvaCountdown ||
             ShowMorphTargetIcons ||
+            ShowSpellTimers ||
+            ShowBurrowedUnits ||
             _abilityDisplayModes.Values.Any(mode =>
                 !string.Equals(
                     mode,
@@ -139,6 +166,10 @@ namespace Malco.Configuration.Models
                 layout == null || layout.ShowTransportCargo,
                 layout == null || layout.ShowLarvaCountdown,
                 layout == null || layout.ShowMorphTargetIcons,
+                layout == null || layout.ShowSpellTimers,
+                layout == null || layout.ShowBurrowedUnits,
+                layout != null ? layout.HiddenSpellTimers : null,
+                layout != null ? layout.HiddenBurrowedUnitIds : null,
                 layout != null ? layout.WorkerCountStyle : MalcoPreferenceValues.WorkerCountClassicGreen,
                 layout != null ? layout.UnitIconSize : MalcoPreferenceValues.IconLarge,
                 layout != null ? layout.BuildingIconSize : MalcoPreferenceValues.IconLarge,
